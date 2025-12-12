@@ -9,23 +9,11 @@ export const loginUser = async (email: string, password: string): Promise<User> 
   // SIMULATION: Simulate Network Latency
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // SIMULATION: In reality, you would do:
-  /*
-  const response = await fetch('https://your-api.com/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-  });
-  if (!response.ok) throw new Error('Login failed');
-  const data = await response.json();
-  return data.user;
-  */
-
   // Mock Success Response
   if (email && password) {
       return {
           id: 'server_generated_id_123',
-          name: email.split('@')[0], // The backend would typically return the name from DB
+          name: email.split('@')[0], 
           email: email
       };
   }
@@ -50,8 +38,6 @@ export const registerUser = async (name: string, email: string, password: string
 export const loginWithSocial = async (providerName: 'Google' | 'GitHub' | 'Facebook'): Promise<User> => {
     // Currently disabled/empty as requested
     console.log(`Social login with ${providerName} triggered but not implemented on backend yet.`);
-    
-    // Throwing error to keep UI in correct state, or could return a dummy user
     throw new Error(`${providerName} login belum disambungkan ke backend.`);
 };
 
