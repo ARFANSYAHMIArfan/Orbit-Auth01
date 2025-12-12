@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Github, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Github } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { AuthMode } from '../../types';
-import { loginUser, registerUser, resetPasswordRequest, loginWithSocial } from '../../services/authService';
 
 interface AuthFormProps {
   mode: AuthMode;
@@ -20,78 +19,39 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [resetSent, setResetSent] = useState(false);
-
-  const handleModeSwitch = (newMode: AuthMode) => {
-    setMode(newMode);
-    setError(null);
-    setResetSent(false);
-    setPassword('');
-  };
-
-  const handleSocialLogin = async (provider: 'Google' | 'GitHub' | 'Facebook') => {
-    // Feature temporarily disabled/empty
-    alert(`${provider} login belum tersedia. Sila gunakan Email & Password.`);
-    
-    /* 
-    // Logic for when backend is ready:
-    try {
-        const user = await loginWithSocial(provider);
-        onLogin(user.name, user.email);
-    } catch (err: any) {
-        // setError(err.message);
-    }
-    */
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    try {
-        // Calling the API Service (simulated)
-        if (mode === 'login') {
-            const user = await loginUser(email, password);
-            onLogin(user.name, user.email);
-        } else if (mode === 'register') {
-            const user = await registerUser(name, email, password);
-            onLogin(user.name, user.email);
-        } else {
-            // Forgot password flow
-            await resetPasswordRequest(email);
-            setIsLoading(false);
-            setResetSent(true);
-        }
-    } catch (err: any) {
-        setError(err.message || 'Ralat sambungan ke server.');
+    // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    if (mode === 'login') {
+      if (email === 'demo@example.com' && password === 'password') {
+        onLogin('Demo User', email);
+      } else if (email && password) {
+         // Allow any non-empty login for demo purposes if not specific demo creds
+         onLogin(name || email.split('@')[0], email);
+      } else {
+        setError('Invalid credentials. Try demo@example.com / password');
         setIsLoading(false);
+      }
+    } else if (mode === 'register') {
+      if (email && password && name) {
+        onLogin(name, email);
+      } else {
+        setError('Please fill in all fields.');
+        setIsLoading(false);
+      }
+    } else {
+      // Forgot password flow
+      setIsLoading(false);
+      alert('Reset link sent to your email!');
+      setMode('login');
     }
   };
-
-  // Success view for Forgot Password
-  if (mode === 'forgot-password' && resetSent) {
-    return (
-        <div className="w-full max-w-md mx-auto animate-fade-in text-center">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-slide-up">
-                <CheckCircle className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Check your email</h2>
-            <p className="text-slate-600 mb-8">
-                We've sent a password reset link to <span className="font-medium text-slate-900">{email}</span>.
-            </p>
-            <Button onClick={() => handleModeSwitch('login')} fullWidth>
-                Back to Sign in
-            </Button>
-            <button 
-              onClick={() => setResetSent(false)} 
-              className="mt-6 text-sm text-slate-500 hover:text-slate-700 font-medium"
-            >
-                Didn't receive the email? Click to resend
-            </button>
-        </div>
-    );
-  }
 
   const renderTitle = () => {
     switch (mode) {
@@ -103,24 +63,14 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
 
   const renderSubtitle = () => {
     switch (mode) {
-      case 'login': return 'Enter your email and password to access the dashboard.';
-      case 'register': return 'Register with your email to get started.';
-      case 'forgot-password': return 'Enter your email and we’ll send you a reset link.';
+      case 'login': return 'Enter your details to access your workspace.';
+      case 'register': return 'Start your 30-day free trial. No credit card required.';
+      case 'forgot-password': return 'We will send you a link to reset your password.';
     }
   };
 
   return (
     <div className="w-full max-w-md mx-auto animate-fade-in">
-      {mode === 'forgot-password' && (
-        <button 
-            onClick={() => handleModeSwitch('login')}
-            className="flex items-center text-sm text-slate-500 hover:text-slate-900 mb-6 transition-colors group"
-        >
-            <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Back to Login
-        </button>
-      )}
-
       <div className="mb-8 text-center sm:text-left">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">{renderTitle()}</h1>
         <p className="text-slate-500 text-sm sm:text-base">{renderSubtitle()}</p>
@@ -170,7 +120,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => handleModeSwitch('forgot-password')}
+                  onClick={() => setMode('forgot-password')}
                   className="text-xs font-medium text-brand-600 hover:text-brand-500"
                 >
                   Forgot password?
@@ -201,15 +151,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <Button 
-                variant="outline" 
-                type="button" 
-                className="w-full px-0 opacity-60" 
-                onClick={() => handleSocialLogin('Google')}
-                title="Google login not connected"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" type="button" className="w-full">
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -227,26 +171,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
                   fill="#EA4335"
                 />
               </svg>
+              Google
             </Button>
-            <Button 
-                variant="outline" 
-                type="button" 
-                className="w-full px-0 opacity-60" 
-                onClick={() => handleSocialLogin('Facebook')}
-                title="Facebook login not connected"
-            >
-               <svg className="h-5 w-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
-                 <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 2.848-6.32 6.191-6.32 1.602 0 3.183.123 3.183.123v3.472h-1.792c-1.815 0-2.38.835-2.38 2.015v1.29h3.896l-.626 3.667h-3.27v7.98h-5.2z" />
-               </svg>
-            </Button>
-            <Button 
-                variant="outline" 
-                type="button" 
-                className="w-full px-0 opacity-60" 
-                onClick={() => handleSocialLogin('GitHub')}
-                title="GitHub login not connected"
-            >
-              <Github className="h-5 w-5" />
+            <Button variant="outline" type="button" className="w-full">
+              <Github className="mr-2 h-4 w-4" />
+              GitHub
             </Button>
           </div>
         </>
@@ -257,23 +186,23 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
           <p className="text-slate-600">
             Don't have an account?{' '}
             <button
-              onClick={() => handleModeSwitch('register')}
+              onClick={() => setMode('register')}
               className="font-medium text-brand-600 hover:text-brand-500"
             >
               Sign up
             </button>
           </p>
-        ) : mode === 'register' ? (
+        ) : (
           <p className="text-slate-600">
             Already have an account?{' '}
             <button
-              onClick={() => handleModeSwitch('login')}
+              onClick={() => setMode('login')}
               className="font-medium text-brand-600 hover:text-brand-500"
             >
               Sign in
             </button>
           </p>
-        ) : null}
+        )}
       </div>
     </div>
   );

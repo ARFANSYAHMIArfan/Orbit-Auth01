@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AuthForm } from './components/auth/AuthForm';
 import { Dashboard } from './components/Dashboard';
 import { User, AuthMode } from './types';
@@ -7,23 +7,6 @@ import { Sparkles } from 'lucide-react';
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const heartbeatUrl = 'https://uptime.betterstack.com/api/v1/heartbeat/wNsKizDoptBKLwbdP7DboYVY';
-    
-    // Send heartbeat signal when the app mounts
-    fetch(heartbeatUrl, { signal: controller.signal })
-      .catch(err => {
-        if (err.name !== 'AbortError') {
-          console.debug('Heartbeat failed:', err);
-        }
-      });
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
 
   const handleLogin = (name: string, email: string) => {
     setUser({

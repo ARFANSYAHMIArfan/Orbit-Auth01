@@ -1,5 +1,5 @@
 {
   "name": "Orbit Auth",
-  "description": "A world-class, responsive authentication interface featuring a split-screen layout and glassmorphism effects.",
+  "description": "A world-class, responsive authentication interface featuring a split-screen layout, glassmorphism effects, and a Gemini-powered welcome dashboard.",
   "requestFramePermissions": []
 }
