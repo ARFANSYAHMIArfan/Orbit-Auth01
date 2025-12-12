@@ -1,128 +1,62 @@
 import { User } from '../types';
-import { auth, database } from '../lib/firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  GithubAuthProvider,
-  sendPasswordResetEmail,
-  updateProfile,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { ref, get, set, child } from 'firebase/database';
 
-// Helper to map Firebase User to our App User type
-const mapFirebaseUser = (firebaseUser: FirebaseUser, dbName?: string): User => {
-    return {
-        id: firebaseUser.uid,
-        name: dbName || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-        email: firebaseUser.email || ''
-    };
-};
+// This service now acts as the API Client.
+// In a real scenario, this would use `fetch` or `axios` to talk to your Node.js/Express server.
 
 export const loginUser = async (email: string, password: string): Promise<User> => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
-    
-    // Fetch extra data from DB
-    const dbRef = ref(database);
-    const snapshot = await get(child(dbRef, `users/${firebaseUser.uid}`));
-    
-    let dbName = '';
-    if (snapshot.exists()) {
-      const userData = snapshot.val();
-      dbName = userData.username || userData.name;
-    }
+  console.log("Sending credential to Backend API...", { email, password });
+  
+  // SIMULATION: Simulate Network Latency
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return mapFirebaseUser(firebaseUser, dbName);
-  } catch (error: any) {
-    console.error("Login Error:", error);
-    throw new Error(getErrorMessage(error.code));
+  // SIMULATION: In reality, you would do:
+  /*
+  const response = await fetch('https://your-api.com/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+  });
+  if (!response.ok) throw new Error('Login failed');
+  const data = await response.json();
+  return data.user;
+  */
+
+  // Mock Success Response
+  if (email && password) {
+      return {
+          id: 'server_generated_id_123',
+          name: email.split('@')[0], // The backend would typically return the name from DB
+          email: email
+      };
   }
+  
+  throw new Error('Invalid credentials');
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<User> => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+  console.log("Sending registration data to Backend API...", { name, email, password });
 
-    await updateProfile(firebaseUser, { displayName: name });
+  // SIMULATION: Simulate Network Latency
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Save user to Realtime Database
-    await set(ref(database, 'users/' + firebaseUser.uid), {
-      username: name,
-      email: email,
-      createdAt: new Date().toISOString(),
-      provider: 'email'
-    });
-
-    return mapFirebaseUser(firebaseUser, name);
-  } catch (error: any) {
-    console.error("Register Error:", error);
-    throw new Error(getErrorMessage(error.code));
-  }
+  // Mock Success Response
+  return {
+      id: 'server_generated_id_456',
+      name: name,
+      email: email
+  };
 };
 
 export const loginWithSocial = async (providerName: 'Google' | 'GitHub' | 'Facebook'): Promise<User> => {
-    try {
-        let provider: any;
-        if (providerName === 'Google') {
-            provider = new GoogleAuthProvider();
-        } else if (providerName === 'GitHub') {
-            provider = new GithubAuthProvider();
-        } else {
-            // Placeholder for Facebook or others not configured
-            throw new Error(`${providerName} login is not fully configured yet.`);
-        }
-
-        const result = await signInWithPopup(auth, provider);
-        const firebaseUser = result.user;
-        
-        // Check if user exists in DB, if not, save them
-        const dbRef = ref(database);
-        const snapshot = await get(child(dbRef, `users/${firebaseUser.uid}`));
-
-        if (!snapshot.exists()) {
-            await set(ref(database, 'users/' + firebaseUser.uid), {
-                username: firebaseUser.displayName,
-                email: firebaseUser.email,
-                createdAt: new Date().toISOString(),
-                provider: providerName
-            });
-        }
-
-        return mapFirebaseUser(firebaseUser);
-    } catch (error: any) {
-        console.error(`${providerName} Login Error:`, error);
-        if (error.code === 'auth/account-exists-with-different-credential') {
-            throw new Error('Email ini sudah didaftarkan menggunakan cara login yang lain (contoh: Google vs Email).');
-        }
-        if (error.code === 'auth/popup-closed-by-user') {
-            throw new Error('Login dibatalkan.');
-        }
-        throw new Error(getErrorMessage(error.code));
-    }
+    // Currently disabled/empty as requested
+    console.log(`Social login with ${providerName} triggered but not implemented on backend yet.`);
+    
+    // Throwing error to keep UI in correct state, or could return a dummy user
+    throw new Error(`${providerName} login belum disambungkan ke backend.`);
 };
 
 export const resetPasswordRequest = async (email: string): Promise<boolean> => {
-    try {
-        await sendPasswordResetEmail(auth, email);
-        return true;
-    } catch (error: any) {
-        throw new Error(getErrorMessage(error.code));
-    }
+    console.log("Requesting password reset from Backend API...", email);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return true;
 };
-
-function getErrorMessage(code: string): string {
-    switch (code) {
-        case 'auth/invalid-credential': return 'Email atau password salah.';
-        case 'auth/user-not-found': return 'Tiada akaun ditemui dengan email ini.';
-        case 'auth/wrong-password': return 'Password salah.';
-        case 'auth/email-already-in-use': return 'Email ini sudah digunakan.';
-        case 'auth/weak-password': return 'Password terlalu lemah.';
-        case 'auth/invalid-email': return 'Format email tidak sah.';
-        default: return 'Ralat berlaku. Sila cuba lagi.';
-    }
-}

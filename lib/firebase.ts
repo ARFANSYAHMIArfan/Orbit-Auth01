@@ -1,21 +1,23 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
+// Firebase client-side initialization is disabled.
+// The application now uses an API-based authentication flow (Frontend -> Backend -> DB).
 
-// PENTING: Pastikan konfigurasi ini sepadan dengan projek Firebase anda.
+/*
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/database';
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDPwMF9yxopZY4ujf1UpBvaBYTBeP72EG0",
-  authDomain: "orbit-auth01.firebaseapp.com",
-  databaseURL: "https://orbit-auth01-default-rtdb.firebaseio.com",
-  projectId: "orbit-auth01",
-  storageBucket: "orbit-auth01.firebasestorage.app",
-  messagingSenderId: "561508542344",
-  appId: "1:561508542344:web:12c1c3645a138d7783fc3df"
+  // Config removed
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-// Initialize Services
-export const auth = getAuth(app);
-export const database = getDatabase(app);
+export const auth = firebase.auth();
+export const database = firebase.database();
+*/
+
+// Export dummy objects if imports exist elsewhere to prevent crash during refactor
+export const auth = {};
+export const database = {};

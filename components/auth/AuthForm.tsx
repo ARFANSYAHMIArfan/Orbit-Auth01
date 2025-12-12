@@ -30,16 +30,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
   };
 
   const handleSocialLogin = async (provider: 'Google' | 'GitHub' | 'Facebook') => {
-    setIsLoading(true);
-    setError(null);
+    // Feature temporarily disabled/empty
+    alert(`${provider} login belum tersedia. Sila gunakan Email & Password.`);
     
+    /* 
+    // Logic for when backend is ready:
     try {
         const user = await loginWithSocial(provider);
         onLogin(user.name, user.email);
     } catch (err: any) {
-        setError(err.message || 'Login failed');
-        setIsLoading(false);
+        // setError(err.message);
     }
+    */
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,6 +50,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
     setIsLoading(true);
 
     try {
+        // Calling the API Service (simulated)
         if (mode === 'login') {
             const user = await loginUser(email, password);
             onLogin(user.name, user.email);
@@ -61,7 +64,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             setResetSent(true);
         }
     } catch (err: any) {
-        setError(err.message || 'Something went wrong');
+        setError(err.message || 'Ralat sambungan ke server.');
         setIsLoading(false);
     }
   };
@@ -100,8 +103,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
 
   const renderSubtitle = () => {
     switch (mode) {
-      case 'login': return 'Enter your details to access your workspace.';
-      case 'register': return 'Start your 30-day free trial. No credit card required.';
+      case 'login': return 'Enter your email and password to access the dashboard.';
+      case 'register': return 'Register with your email to get started.';
       case 'forgot-password': return 'Enter your email and we’ll send you a reset link.';
     }
   };
@@ -202,10 +205,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             <Button 
                 variant="outline" 
                 type="button" 
-                className="w-full px-0" 
+                className="w-full px-0 opacity-60" 
                 onClick={() => handleSocialLogin('Google')}
-                title="Sign in with Google"
-                disabled={isLoading}
+                title="Google login not connected"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
@@ -229,10 +231,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             <Button 
                 variant="outline" 
                 type="button" 
-                className="w-full px-0" 
+                className="w-full px-0 opacity-60" 
                 onClick={() => handleSocialLogin('Facebook')}
-                title="Sign in with Facebook"
-                disabled={isLoading}
+                title="Facebook login not connected"
             >
                <svg className="h-5 w-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                  <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 2.848-6.32 6.191-6.32 1.602 0 3.183.123 3.183.123v3.472h-1.792c-1.815 0-2.38.835-2.38 2.015v1.29h3.896l-.626 3.667h-3.27v7.98h-5.2z" />
@@ -241,10 +242,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             <Button 
                 variant="outline" 
                 type="button" 
-                className="w-full px-0" 
+                className="w-full px-0 opacity-60" 
                 onClick={() => handleSocialLogin('GitHub')}
-                title="Sign in with GitHub"
-                disabled={isLoading}
+                title="GitHub login not connected"
             >
               <Github className="h-5 w-5" />
             </Button>
