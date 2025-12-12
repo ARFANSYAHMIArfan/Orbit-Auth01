@@ -37,8 +37,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
         const user = await loginWithSocial(provider);
         onLogin(user.name, user.email);
     } catch (err: any) {
-        console.error(err);
-        setError(err.message || `Failed to login with ${provider}`);
+        setError(err.message || 'Login failed');
         setIsLoading(false);
     }
   };
@@ -232,10 +231,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
                 type="button" 
                 className="w-full px-0" 
                 onClick={() => handleSocialLogin('Facebook')}
-                title="Sign in with Facebook (Not Configured)"
-                disabled={true} 
+                title="Sign in with Facebook"
+                disabled={isLoading}
             >
-               <svg className="h-5 w-5 text-[#1877F2] opacity-50" fill="currentColor" viewBox="0 0 24 24">
+               <svg className="h-5 w-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                  <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 2.848-6.32 6.191-6.32 1.602 0 3.183.123 3.183.123v3.472h-1.792c-1.815 0-2.38.835-2.38 2.015v1.29h3.896l-.626 3.667h-3.27v7.98h-5.2z" />
                </svg>
             </Button>

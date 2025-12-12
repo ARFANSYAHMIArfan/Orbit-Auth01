@@ -1,9 +1,19 @@
 import { User } from '../types';
 import { auth, database } from '../lib/firebase';
-import firebase from 'firebase/app';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  GithubAuthProvider,
+  sendPasswordResetEmail,
+  updateProfile,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { ref, get, set, child } from 'firebase/database';
 
 // Helper to map Firebase User to our App User type
-const mapFirebaseUser = (firebaseUser: firebase.User, dbName?: string): User => {
+const mapFirebaseUser = (firebaseUser: FirebaseUser, dbName?: string): User => {
     return {
         id: firebaseUser.uid,
         name: dbName || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
@@ -13,15 +23,12 @@ const mapFirebaseUser = (firebaseUser: firebase.User, dbName?: string): User => 
 
 export const loginUser = async (email: string, password: string): Promise<User> => {
   try {
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
     
-    if (!firebaseUser) {
-        throw new Error('User not found');
-    }
-
     // Fetch extra data from DB
-    const snapshot = await database.ref(`users/${firebaseUser.uid}`).once('value');
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `users/${firebaseUser.uid}`));
     
     let dbName = '';
     if (snapshot.exists()) {
@@ -38,17 +45,13 @@ export const loginUser = async (email: string, password: string): Promise<User> 
 
 export const registerUser = async (name: string, email: string, password: string): Promise<User> => {
   try {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
-    if (!firebaseUser) {
-        throw new Error('Failed to create user');
-    }
-
-    await firebaseUser.updateProfile({ displayName: name });
+    await updateProfile(firebaseUser, { displayName: name });
 
     // Save user to Realtime Database
-    await database.ref('users/' + firebaseUser.uid).set({
+    await set(ref(database, 'users/' + firebaseUser.uid), {
       username: name,
       email: email,
       createdAt: new Date().toISOString(),
@@ -64,28 +67,25 @@ export const registerUser = async (name: string, email: string, password: string
 
 export const loginWithSocial = async (providerName: 'Google' | 'GitHub' | 'Facebook'): Promise<User> => {
     try {
-        let provider: firebase.auth.AuthProvider;
+        let provider: any;
         if (providerName === 'Google') {
-            provider = new firebase.auth.GoogleAuthProvider();
+            provider = new GoogleAuthProvider();
         } else if (providerName === 'GitHub') {
-            provider = new firebase.auth.GithubAuthProvider();
+            provider = new GithubAuthProvider();
         } else {
             // Placeholder for Facebook or others not configured
             throw new Error(`${providerName} login is not fully configured yet.`);
         }
 
-        const result = await auth.signInWithPopup(provider);
+        const result = await signInWithPopup(auth, provider);
         const firebaseUser = result.user;
         
-        if (!firebaseUser) {
-            throw new Error('Social login failed');
-        }
-
         // Check if user exists in DB, if not, save them
-        const snapshot = await database.ref(`users/${firebaseUser.uid}`).once('value');
+        const dbRef = ref(database);
+        const snapshot = await get(child(dbRef, `users/${firebaseUser.uid}`));
 
         if (!snapshot.exists()) {
-            await database.ref('users/' + firebaseUser.uid).set({
+            await set(ref(database, 'users/' + firebaseUser.uid), {
                 username: firebaseUser.displayName,
                 email: firebaseUser.email,
                 createdAt: new Date().toISOString(),
@@ -108,7 +108,7 @@ export const loginWithSocial = async (providerName: 'Google' | 'GitHub' | 'Faceb
 
 export const resetPasswordRequest = async (email: string): Promise<boolean> => {
     try {
-        await auth.sendPasswordResetEmail(email);
+        await sendPasswordResetEmail(auth, email);
         return true;
     } catch (error: any) {
         throw new Error(getErrorMessage(error.code));

@@ -1,6 +1,6 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/database';
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 
 // PENTING: Pastikan konfigurasi ini sepadan dengan projek Firebase anda.
 const firebaseConfig = {
@@ -14,11 +14,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
 
 // Initialize Services
-export const auth = firebase.auth();
-export const database = firebase.database();
-export default firebase;
+export const auth = getAuth(app);
+export const database = getDatabase(app);
