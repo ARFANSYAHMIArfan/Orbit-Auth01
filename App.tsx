@@ -26,19 +26,15 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-slate-50">
+    <div className="min-h-screen w-full flex bg-brand-50">
       {/* Left Column - Hero/Brand */}
-      <div className="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden text-white flex-col justify-between p-12">
+      <div className="hidden lg:flex w-1/2 relative bg-brand-900 overflow-hidden text-white flex-col justify-between p-12">
         {/* Background Effects */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://picsum.photos/1920/1080?grayscale&blur=2" 
-            alt="Abstract Background" 
-            className="w-full h-full object-cover opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-900/90 via-slate-900/95 to-black/90 mix-blend-multiply" />
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-500 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-pulse" />
-          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500 rounded-full mix-blend-screen filter blur-[96px] opacity-30" />
+          <div className="absolute inset-0 bg-brand-900" />
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-pulse" />
+          <div className="absolute top-1/2 right-0 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-[96px] opacity-20" />
+          <div className="absolute bottom-0 left-1/2 w-80 h-80 bg-brand-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-30" />
         </div>
 
         {/* Content */}
@@ -52,28 +48,18 @@ const App: React.FC = () => {
         </div>
 
         <div className="relative z-10 max-w-lg">
-          <blockquote className="text-2xl font-medium leading-relaxed mb-6 text-slate-100">
-            "The future belongs to those who believe in the beauty of their dreams. Join us and build what's next."
+          <blockquote className="text-4xl font-bold leading-tight mb-6 text-white">
+            "Satu Platform. Akses Untuk Kita Semua"
           </blockquote>
-          <div className="flex items-center space-x-4">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-700 overflow-hidden">
-                    <img src={`https://picsum.photos/50/50?random=${i}`} alt="User" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-slate-400">Trusted by 10,000+ developers</p>
-          </div>
         </div>
         
-        <div className="relative z-10 text-xs text-slate-500">
-          © 2024 Orbit Inc. All rights reserved.
+        <div className="relative z-10 text-[10px] text-slate-300 uppercase tracking-wider leading-relaxed opacity-70">
+          © 2025 HAK CIPTA TERPELIHARA SM SAINS MUZAFFAR SYAH DIBANGUNKAN OLEH: MUHAMMAD ARFAN
         </div>
       </div>
 
       {/* Right Column - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-brand-50">
         <div className="absolute top-6 left-6 lg:hidden flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white" />
