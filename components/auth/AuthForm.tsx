@@ -32,22 +32,21 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
   const handleSocialLogin = async (provider: 'Google' | 'GitHub' | 'Facebook') => {
     // Feature temporarily disabled/empty
     alert(`${provider} login belum tersedia. Sila gunakan Email & Password.`);
-  };
-
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    
+    /* 
+    // Logic for when backend is ready:
+    try {
+        const user = await loginWithSocial(provider);
+        onLogin(user.name, user.email);
+    } catch (err: any) {
+        // setError(err.message);
+    }
+    */
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    // Client-side validation
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -69,10 +68,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
         setIsLoading(false);
     }
   };
-
-  // Determine which field the error belongs to for UI display
-  const isEmailError = error?.toLowerCase().includes('email');
-  const isPasswordError = error && !isEmailError;
 
   // Success view for Forgot Password
   if (mode === 'forgot-password' && resetSent) {
@@ -153,7 +148,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
           icon={Mail}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          error={isEmailError ? error : undefined}
           required
         />
 
@@ -169,7 +163,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
               iconClickable
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              error={isPasswordError ? error : undefined}
+              error={error || undefined}
               required
             />
             {mode === 'login' && (

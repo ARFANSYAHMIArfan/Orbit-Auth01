@@ -3,7 +3,6 @@ import { AuthForm } from './components/auth/AuthForm';
 import { Dashboard } from './components/Dashboard';
 import { User, AuthMode } from './types';
 import { Sparkles } from 'lucide-react';
-import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -40,17 +39,11 @@ const App: React.FC = () => {
   };
 
   if (user) {
-    return (
-      <>
-        <Dashboard user={user} onLogout={handleLogout} />
-        <SpeedInsights />
-      </>
-    );
+    return <Dashboard user={user} onLogout={handleLogout} />;
   }
 
   return (
     <div className="min-h-screen w-full flex bg-slate-50">
-      <SpeedInsights />
       {/* Left Column - Hero/Brand */}
       <div className="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden text-white flex-col justify-between p-12">
         {/* Background Effects */}
