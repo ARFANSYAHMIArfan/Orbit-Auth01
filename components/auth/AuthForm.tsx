@@ -55,17 +55,17 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
 
   const renderTitle = () => {
     switch (mode) {
-      case 'login': return 'Welcome back';
-      case 'register': return 'Create an account';
-      case 'forgot-password': return 'Reset password';
+      case 'login': return 'Selamat Kembali';
+      case 'register': return 'Cipta akaun';
+      case 'forgot-password': return 'Tetapkan semula kata laluan';
     }
   };
 
   const renderSubtitle = () => {
     switch (mode) {
-      case 'login': return 'Enter your details to access your workspace.';
-      case 'register': return 'Start your 30-day free trial. No credit card required.';
-      case 'forgot-password': return 'We will send you a link to reset your password.';
+      case 'login': return 'Masukkan butiran anda untuk mengakses ruang kerja anda.';
+      case 'register': return 'Mulakan percubaan percuma anda. Tiada kad kredit diperlukan.';
+      case 'forgot-password': return 'Kami akan menghantar pautan untuk menetapkan semula kata laluan anda.';
     }
   };
 
@@ -81,7 +81,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
           <Input
             id="name"
             type="text"
-            label="Full Name"
+            label="Nama Penuh"
             placeholder="John Doe"
             icon={User}
             value={name}
@@ -93,7 +93,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
         <Input
           id="email"
           type="email"
-          label="Email Address"
+          label="Alamat Emel"
           placeholder="name@company.com"
           icon={Mail}
           value={email}
@@ -106,7 +106,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              label="Password"
+              label="Kata Laluan"
               placeholder="••••••••"
               icon={showPassword ? EyeOff : Eye}
               onIconClick={() => setShowPassword(!showPassword)}
@@ -123,7 +123,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
                   onClick={() => setMode('forgot-password')}
                   className="text-xs font-medium text-brand-600 hover:text-brand-500"
                 >
-                  Forgot password?
+                  Lupa kata laluan?
                 </button>
               </div>
             )}
@@ -132,9 +132,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
 
         <div className="pt-2">
           <Button type="submit" fullWidth isLoading={isLoading} size="lg">
-            {mode === 'login' && 'Sign In'}
-            {mode === 'register' && 'Create Account'}
-            {mode === 'forgot-password' && 'Send Reset Link'}
+            {mode === 'login' && 'Log Masuk'}
+            {mode === 'register' && 'Cipta Akaun'}
+            {mode === 'forgot-password' && 'Hantar Pautan'}
             {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>
         </div>
@@ -147,7 +147,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
               <span className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-50 px-2 text-slate-500">Or continue with</span>
+              <span className="bg-slate-50 px-2 text-slate-500">ATAU TERUSKAN DENGAN</span>
             </div>
           </div>
 
@@ -184,22 +184,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
       <div className="mt-8 text-center text-sm">
         {mode === 'login' ? (
           <p className="text-slate-600">
-            Don't have an account?{' '}
+            Tiada akaun?{' '}
             <button
               onClick={() => setMode('register')}
               className="font-medium text-brand-600 hover:text-brand-500"
             >
-              Sign up
+              Daftar
             </button>
           </p>
         ) : (
           <p className="text-slate-600">
-            Already have an account?{' '}
+            Sudah mempunyai akaun?{' '}
             <button
               onClick={() => setMode('login')}
               className="font-medium text-brand-600 hover:text-brand-500"
             >
-              Sign in
+              Log masuk
             </button>
           </p>
         )}

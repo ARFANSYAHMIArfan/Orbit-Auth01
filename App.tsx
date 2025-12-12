@@ -43,7 +43,7 @@ const App: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-brand-300" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white">Orbit</span>
+            <span className="text-2xl font-bold tracking-tight text-white">KITABUDDY: Zero Trust</span>
           </div>
         </div>
 
@@ -54,7 +54,8 @@ const App: React.FC = () => {
         </div>
         
         <div className="relative z-10 text-[10px] text-slate-300 uppercase tracking-wider leading-relaxed opacity-70">
-          © 2025 HAK CIPTA TERPELIHARA SM SAINS MUZAFFAR SYAH DIBANGUNKAN OLEH: MUHAMMAD ARFAN
+          <p>© 2025 HAK CIPTA TERPELIHARA SM SAINS MUZAFFAR SYAH</p>
+          <p className="mt-1">DIBANGUNKAN OLEH: MUHAMMAD ARFAN</p>
         </div>
       </div>
 
@@ -64,7 +65,7 @@ const App: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-slate-900">Orbit</span>
+            <span className="text-xl font-bold text-slate-900">KITABUDDY</span>
         </div>
         
         <AuthForm 
