@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe } from 'lucide-react';
+import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe, CheckCircle2, Database } from 'lucide-react';
 import { ConnectModal } from './ConnectModal';
+import { DataExplorer } from './DataExplorer';
+import { mongodbService } from '../services/mongodbService';
 
 interface DashboardProps {
   user: User;
@@ -14,22 +16,44 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [language, setLanguage] = useState("Bahasa Melayu (Malaysia)");
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await mongodbService.updateUser(user.id, { name, email });
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to save to database", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-8 flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="p-2 h-auto">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Tetapan</h2>
-          <p className="text-slate-500 text-sm">Konfigurasikan pilihan ruang kerja dan akaun anda.</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={onBack} className="p-2 h-auto">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Tetapan</h2>
+            <p className="text-slate-500 text-sm">Konfigurasikan pilihan ruang kerja dan akaun anda.</p>
+          </div>
         </div>
+        {showSuccess && (
+          <div className="flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg animate-slide-up border border-emerald-100">
+            <CheckCircle2 className="h-4 w-4" />
+            <span className="text-sm font-medium">Berjaya disimpan ke MongoDB!</span>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6">
-        {/* Profile Section */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <UserIcon className="h-5 w-5 text-brand-600" />
             <h3 className="font-semibold text-slate-900">Profil Pengguna</h3>
@@ -39,17 +63,18 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
                label="Nama Penuh" 
                value={name} 
                onChange={(e) => setName(e.target.value)} 
+               disabled={isSaving}
              />
              <Input 
                label="Alamat Emel" 
                value={email} 
                onChange={(e) => setEmail(e.target.value)} 
+               disabled={isSaving}
              />
           </div>
         </div>
 
-        {/* Preferences Section */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <Globe className="h-5 w-5 text-brand-600" />
             <h3 className="font-semibold text-slate-900">Bahasa & Wilayah</h3>
@@ -60,13 +85,13 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
                   label="Bahasa Pilihan" 
                   value={language} 
                   onChange={(e) => setLanguage(e.target.value)} 
+                  disabled={isSaving}
                 />
              </div>
           </div>
         </div>
 
-        {/* Security Section */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <Shield className="h-5 w-5 text-brand-600" />
             <h3 className="font-semibold text-slate-900">Keselamatan</h3>
@@ -76,12 +101,15 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
                <p className="font-medium text-slate-900">Tukar Kata Laluan</p>
                <p className="text-sm text-slate-500">Kemas kini kata laluan anda secara berkala.</p>
              </div>
-             <Button variant="outline">Kemas Kini</Button>
+             <Button variant="outline" disabled={isSaving}>Kemas Kini</Button>
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={onBack}>Simpan Perubahan</Button>
+        <div className="flex justify-end pt-4 space-x-3">
+          <Button variant="ghost" onClick={onBack} disabled={isSaving}>Batal</Button>
+          <Button onClick={handleSave} isLoading={isSaving} className="min-w-[160px]">
+            Simpan Perubahan
+          </Button>
         </div>
       </div>
     </div>
@@ -89,7 +117,7 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
-  const [currentView, setCurrentView] = useState<'home' | 'settings'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer'>('home');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const items = [
@@ -108,6 +136,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       href: null,
       onClick: () => setIsConnectModalOpen(true),
       icon: Folder
+    },
+    { 
+      title: 'Data Explorer', 
+      desc: 'Query dan urus data MongoDB anda secara visual.', 
+      color: 'bg-emerald-50 text-emerald-700',
+      href: null,
+      onClick: () => setCurrentView('explorer'),
+      icon: Database
     },
     { 
       title: 'Tetapan', 
@@ -152,14 +188,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
               
               <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 max-w-5xl mx-auto leading-tight">
-                Selamat Datang ke Pusat Capaian Tanpa Kepercayaan (Zero-Trust Network Platform) KitaBUDDY: Menjamin Keselamatan dan Akses Pengguna Berguna
+                Selamat Datang ke Pusat Capaian Tanpa Kepercayaan KitaBUDDY
               </h2>
               
               <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-                Fokus, capai, cemerlang. Jadikan hari ini luar biasa.
+                Integrasi penuh dengan MongoDB Atlas untuk pengurusan data yang selamat.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mt-12">
                 {items.map((item, i) => {
                   const CardContent = () => (
                     <>
@@ -178,7 +214,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group block"
+                        className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group block text-left"
                       >
                         <CardContent />
                       </a>
@@ -189,7 +225,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                     <div 
                       key={i} 
                       onClick={item.onClick}
-                      className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group"
+                      className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group text-left"
                     >
                       <CardContent />
                     </div>
@@ -198,8 +234,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : currentView === 'settings' ? (
           <SettingsView onBack={() => setCurrentView('home')} user={user} />
+        ) : (
+          <DataExplorer onBack={() => setCurrentView('home')} />
         )}
       </main>
 
