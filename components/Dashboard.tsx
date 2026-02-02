@@ -3,6 +3,7 @@ import { User } from '../types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe } from 'lucide-react';
+import { ConnectModal } from './ConnectModal';
 
 interface DashboardProps {
   user: User;
@@ -89,6 +90,7 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [currentView, setCurrentView] = useState<'home' | 'settings'>('home');
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const items = [
     { 
@@ -104,7 +106,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       desc: 'Urus tugas pembangunan aktif anda.', 
       color: 'bg-indigo-50 text-indigo-700',
       href: null,
-      onClick: undefined,
+      onClick: () => setIsConnectModalOpen(true),
       icon: Folder
     },
     { 
@@ -200,6 +202,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <SettingsView onBack={() => setCurrentView('home')} user={user} />
         )}
       </main>
+
+      <ConnectModal 
+        isOpen={isConnectModalOpen} 
+        onClose={() => setIsConnectModalOpen(false)} 
+      />
     </div>
   );
 };
