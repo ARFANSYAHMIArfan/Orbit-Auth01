@@ -1,8 +1,8 @@
 import { User } from '../types';
 
 /**
- * MongoDB Service Layer
- * Mempunyai keupayaan untuk query data secara simulasi.
+ * Sistem Simpanan Data Tempatan Terpelihara (dbService)
+ * Menguruskan profil dan data pengguna secara simulasi di peringkat penyemak imbas (browser storage).
  */
 
 const DB_NAME = 'kitabuddy_db';
@@ -10,7 +10,7 @@ const COLLECTION_USERS = 'users';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const mongodbService = {
+export const dbService = {
   // Simulasi mencari semua dokumen dalam koleksi
   async getAllDocuments(collection: string = COLLECTION_USERS): Promise<any[]> {
     await delay(400);
@@ -18,7 +18,7 @@ export const mongodbService = {
     return db[collection] || [];
   },
 
-  // Simulasi mencari user by email
+  // Simulasi mencari pengguna berdasarkan emel
   async findUser(email: string): Promise<User | null> {
     await delay(500);
     const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
@@ -26,7 +26,7 @@ export const mongodbService = {
     return users.find((u: User) => u.email === email) || null;
   },
 
-  // Simulasi query (penapisan mudah)
+  // Simulasi pertanyaan (tapis) dokumen
   async queryDocuments(queryString: string, collection: string = COLLECTION_USERS): Promise<any[]> {
     await delay(600);
     const all = await this.getAllDocuments(collection);
@@ -41,7 +41,7 @@ export const mongodbService = {
         });
       });
     } catch (e) {
-      console.error("Invalid Query Syntax");
+      console.error("Sintaks Pertanyaan Tidak Sah");
       return all;
     }
   },

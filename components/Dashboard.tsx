@@ -5,7 +5,8 @@ import { Input } from './ui/Input';
 import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe, CheckCircle2, Database } from 'lucide-react';
 import { ConnectModal } from './ConnectModal';
 import { DataExplorer } from './DataExplorer';
-import { mongodbService } from '../services/mongodbService';
+import { StatusView } from './StatusView';
+import { dbService } from '../services/dbService';
 
 interface DashboardProps {
   user: User;
@@ -22,7 +23,7 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await mongodbService.updateUser(user.id, { name, email });
+      await dbService.updateUser(user.id, { name, email });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
@@ -47,7 +48,7 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
         {showSuccess && (
           <div className="flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg animate-slide-up border border-emerald-100">
             <CheckCircle2 className="h-4 w-4" />
-            <span className="text-sm font-medium">Berjaya disimpan ke MongoDB!</span>
+            <span className="text-sm font-medium">Berjaya disimpan ke Pangkalan Data!</span>
           </div>
         )}
       </div>
@@ -117,7 +118,7 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
-  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status'>('home');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const items = [
@@ -125,8 +126,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       title: 'Check Status', 
       desc: 'Lihat status sistem dan metrik prestasi masa nyata.', 
       color: 'bg-blue-50 text-blue-700',
-      href: 'https://kitabuddy-orbit.betteruptime.com/',
-      onClick: undefined,
+      href: null,
+      onClick: () => setCurrentView('status'),
       icon: Activity
     },
     { 
@@ -139,7 +140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     },
     { 
       title: 'Data Explorer', 
-      desc: 'Query dan urus data MongoDB anda secara visual.', 
+      desc: 'Query dan urus data pengguna anda secara visual.', 
       color: 'bg-emerald-50 text-emerald-700',
       href: null,
       onClick: () => setCurrentView('explorer'),
@@ -192,7 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </h2>
               
               <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-                Integrasi penuh dengan MongoDB Atlas untuk pengurusan data yang selamat.
+                Sistem berkonsepkan kawalan data tempatan yang selamat dan lestari.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mt-12">
@@ -236,6 +237,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           </div>
         ) : currentView === 'settings' ? (
           <SettingsView onBack={() => setCurrentView('home')} user={user} />
+        ) : currentView === 'status' ? (
+          <StatusView onBack={() => setCurrentView('home')} />
         ) : (
           <DataExplorer onBack={() => setCurrentView('home')} />
         )}
