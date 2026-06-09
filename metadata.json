@@ -2,5 +2,5 @@
   "name": "KITABUDDY:ZERO TRUST SAML",
   "description": "A world-class, responsive authentication interface featuring a split-screen layout, glassmorphism effects, and a Gemini-powered welcome dashboard.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

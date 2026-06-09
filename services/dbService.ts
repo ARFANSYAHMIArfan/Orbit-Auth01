@@ -67,8 +67,53 @@ export const dbService = {
     return updatedUser;
   },
 
+  async deleteUser(userId: string): Promise<boolean> {
+    await delay(600);
+    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
+    const users = db[COLLECTION_USERS] || [];
+    const filtered = users.filter((u: User) => u.id !== userId);
+    db[COLLECTION_USERS] = filtered;
+    localStorage.setItem(DB_NAME, JSON.stringify(db));
+    return true;
+  },
+
   async checkConnection(): Promise<boolean> {
     await delay(300);
+    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
+    let users = db[COLLECTION_USERS] || [];
+
+    // Purge old mock accounts if they exist in localStorage
+    const oldEmails = ['arfan@muzaffar.edu.my', 'syahril@kamal.edu.my', 'kitabuddy_bot@moe.edu.my', 'fatimah@moe-dl.edu.my'];
+    users = users.filter((u: any) => !oldEmails.includes(u.email));
+
+    const DEFAULT_USERS = [
+      {
+        id: 'u_iam_admin',
+        name: 'IAM Server ADMIN',
+        email: 'rfnsyhmi.principal@gmail.com',
+        role: 'IAM Portal Administrator',
+        department: 'Sistem Kawalan IAM',
+        lastActive: 'Masa Nyata',
+        ipAddress: '10.240.10.1',
+        status: 'Aktif'
+      }
+    ];
+
+    let modified = false;
+    DEFAULT_USERS.forEach(defUser => {
+      if (!users.some((u: any) => u.email === defUser.email)) {
+        users.push(defUser);
+        modified = true;
+      }
+    });
+
+    // If we purged old emails, we set modified to true
+    const currentEmails = users.map((u: any) => u.email);
+    if (oldEmails.some(e => currentEmails.includes(e)) || modified || !db[COLLECTION_USERS] || db[COLLECTION_USERS].length !== users.length) {
+      db[COLLECTION_USERS] = users;
+      localStorage.setItem(DB_NAME, JSON.stringify(db));
+    }
+
     return true;
   }
 };

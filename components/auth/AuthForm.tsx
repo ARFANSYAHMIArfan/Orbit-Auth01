@@ -3,6 +3,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Github } from 'lucide-react'
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { AuthMode } from '../../types';
+import { dbService } from '../../services/dbService';
 
 interface AuthFormProps {
   mode: AuthMode;
@@ -26,29 +27,66 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
     setIsLoading(true);
 
     // Simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const checkEmail = email.trim().toLowerCase();
 
     if (mode === 'login') {
-      if (email === 'demo@example.com' && password === 'password') {
-        onLogin('Demo User', email);
-      } else if (email && password) {
-         // Allow any non-empty login for demo purposes if not specific demo creds
-         onLogin(name || email.split('@')[0], email);
-      } else {
-        setError('Invalid credentials. Try demo@example.com / password');
+      try {
+        const foundUser = await dbService.findUser(checkEmail);
+        
+        if (foundUser) {
+          // If password exists for this user in DB, we validate it
+          if (foundUser.password && foundUser.password !== password) {
+            setError('Ralat: Kata laluan tidak sah untuk profil keselamatan IAM ini.');
+            setIsLoading(false);
+            return;
+          }
+          onLogin(foundUser.name, foundUser.email);
+        } else {
+          // Allow first-time login auto-creation if not in DB yet (for backward compatibility / convenience)
+          onLogin(name || checkEmail.split('@')[0], checkEmail);
+        }
+      } catch (err) {
+        setError('Siri pengesahan pangkalan data terputus. Sila cuba lagi.');
         setIsLoading(false);
       }
     } else if (mode === 'register') {
-      if (email && password && name) {
-        onLogin(name, email);
+      if (checkEmail && password && name) {
+        try {
+          const foundUser = await dbService.findUser(checkEmail);
+          if (foundUser) {
+            setError('Ralat: Alamat emel ini telah didaftarkan dalam rekod IAM.');
+            setIsLoading(false);
+            return;
+          }
+
+          // Register new user to simulated secure database
+          const newId = 'u_usr_' + Math.random().toString(36).substring(2, 8);
+          await dbService.updateUser(newId, {
+            name: name.trim(),
+            email: checkEmail,
+            password: password,
+            role: 'Kakitangan',
+            department: 'Sistem Kawalan IAM',
+            lastActive: 'Sesaat yang lalu',
+            ipAddress: '10.240.10.' + Math.floor(Math.random() * 254 + 1),
+            status: 'Aktif'
+          });
+
+          onLogin(name.trim(), checkEmail);
+        } catch (err) {
+          setError('Gagal mendaftar pengguna baru ke pangkalan data.');
+          setIsLoading(false);
+        }
       } else {
-        setError('Please fill in all fields.');
+        setError('Sila isi semua butiran pendaftaran.');
         setIsLoading(false);
       }
     } else {
       // Forgot password flow
       setIsLoading(false);
-      alert('Reset link sent to your email!');
+      alert('Pautan penetapan semula kata laluan telah dihantar ke emel anda!');
       setMode('login');
     }
   };

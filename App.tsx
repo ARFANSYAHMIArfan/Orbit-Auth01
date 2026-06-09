@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { User, AuthMode } from './types';
 import { Sparkles, Shield } from 'lucide-react';
 import { dbService } from './services/dbService';
+import { SessionManager } from './components/SessionManager';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -49,7 +50,11 @@ const App: React.FC = () => {
   }
 
   if (user) {
-    return <Dashboard user={user} onLogout={handleLogout} />;
+    return (
+      <SessionManager onLogout={handleLogout}>
+        <Dashboard user={user} onLogout={handleLogout} />
+      </SessionManager>
+    );
   }
 
   return (
