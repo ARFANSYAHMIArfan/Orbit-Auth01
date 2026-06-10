@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Profil pengguna berdaftar di dalam direktori keselamatan Zero Trust IAM",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID unik jana-automata untuk rujukan pengguna"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nama penuh pengguna"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Alamat emel akses rasmi"
+        },
+        "password": {
+          "type": "string",
+          "description": "Kata laluan hash/keselamatan untuk pengesahan akses"
+        },
+        "role": {
+          "type": "string",
+          "description": "Peranan keselamatan sistem IAM"
+        },
+        "department": {
+          "type": "string",
+          "description": "Jabatan bertugas"
+        },
+        "lastActive": {
+          "type": "string",
+          "description": "Penunjuk penjejakan aktiviti semasa"
+        },
+        "ipAddress": {
+          "type": "string",
+          "description": "Penanda alamat IP sesi log masuk"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status keaktifan pematuhan keselamatan"
+        }
+      },
+      "required": ["id", "name", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Koleksi direktori kawalan pengguna IAM rasmi"
+    }
+  }
+}

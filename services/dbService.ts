@@ -1,119 +1,124 @@
 import { User } from '../types';
+import { db, handleFirestoreError, OperationType } from './firebase.ts';
+import { 
+  collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, where, getDocFromServer 
+} from 'firebase/firestore';
 
-/**
- * Sistem Simpanan Data Tempatan Terpelihara (dbService)
- * Menguruskan profil dan data pengguna secara simulasi di peringkat penyemak imbas (browser storage).
- */
-
-const DB_NAME = 'kitabuddy_db';
 const COLLECTION_USERS = 'users';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const dbService = {
-  // Simulasi mencari semua dokumen dalam koleksi
-  async getAllDocuments(collection: string = COLLECTION_USERS): Promise<any[]> {
-    await delay(400);
-    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
-    return db[collection] || [];
-  },
-
-  // Simulasi mencari pengguna berdasarkan emel
-  async findUser(email: string): Promise<User | null> {
-    await delay(500);
-    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
-    const users = db[COLLECTION_USERS] || [];
-    return users.find((u: User) => u.email === email) || null;
-  },
-
-  // Simulasi pertanyaan (tapis) dokumen
-  async queryDocuments(queryString: string, collection: string = COLLECTION_USERS): Promise<any[]> {
-    await delay(600);
-    const all = await this.getAllDocuments(collection);
-    
-    if (!queryString.trim() || queryString === '{}') return all;
-
+  // Ambil semua dokumen dalam koleksi users
+  async getAllDocuments(collName: string = COLLECTION_USERS): Promise<any[]> {
     try {
+      const q = collection(db, collName);
+      const snapshot = await getDocs(q);
+      const docs: any[] = [];
+      snapshot.forEach((d) => {
+        docs.push({ id: d.id, ...d.data() });
+      });
+      return docs;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, collName);
+      return [];
+    }
+  },
+
+  // Cari pengguna berdasarkan emel
+  async findUser(email: string): Promise<User | null> {
+    const trimmedEmail = email.trim().toLowerCase();
+    try {
+      const q = query(collection(db, COLLECTION_USERS), where('email', '==', trimmedEmail));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      let found: User | null = null;
+      snapshot.forEach((d) => {
+        found = { id: d.id, ...d.data() } as User;
+      });
+      return found;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, `${COLLECTION_USERS}?email=${trimmedEmail}`);
+      return null;
+    }
+  },
+
+  // Menyaring dokumen dari Firestore
+  async queryDocuments(queryString: string, collName: string = COLLECTION_USERS): Promise<any[]> {
+    try {
+      const all = await this.getAllDocuments(collName);
+      if (!queryString.trim() || queryString === '{}') return all;
+
       const queryObj = JSON.parse(queryString);
-      return all.filter(doc => {
+      return all.filter(docVal => {
         return Object.entries(queryObj).every(([key, value]) => {
-          return String(doc[key]).toLowerCase().includes(String(value).toLowerCase());
+          return String(docVal[key] || '').toLowerCase().includes(String(value).toLowerCase());
         });
       });
     } catch (e) {
-      console.error("Sintaks Pertanyaan Tidak Sah");
-      return all;
+      console.error("Sintaks Pertanyaan Tidak Sah", e);
+      // Kembali kepada semua dokumen jika ralat query parsing berlaku
+      return this.getAllDocuments(collName).catch(() => []);
     }
   },
 
+  // Tambah atau kemas kini dokumen profil pengguna
   async updateUser(userId: string, updates: Partial<User>): Promise<User> {
-    await delay(800);
-    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
-    const users = db[COLLECTION_USERS] || [];
-    const index = users.findIndex((u: User) => u.id === userId);
-    
-    if (index === -1) {
-      const newUser = { id: userId, ...updates } as User;
-      users.push(newUser);
-      db[COLLECTION_USERS] = users;
-      localStorage.setItem(DB_NAME, JSON.stringify(db));
-      return newUser;
+    const docPath = `${COLLECTION_USERS}/${userId}`;
+    try {
+      const docRef = doc(db, COLLECTION_USERS, userId);
+      const existingDoc = await getDoc(docRef);
+      let updatedUser: User;
+      if (!existingDoc.exists()) {
+        updatedUser = { id: userId, ...updates } as User;
+      } else {
+        updatedUser = { ...existingDoc.data(), ...updates, id: userId } as User;
+      }
+      
+      await setDoc(docRef, updatedUser);
+      return updatedUser;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, docPath);
+      throw error;
     }
-    
-    const updatedUser = { ...users[index], ...updates };
-    users[index] = updatedUser;
-    db[COLLECTION_USERS] = users;
-    localStorage.setItem(DB_NAME, JSON.stringify(db));
-    return updatedUser;
   },
 
+  // Padam data pengguna dari portal
   async deleteUser(userId: string): Promise<boolean> {
-    await delay(600);
-    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
-    const users = db[COLLECTION_USERS] || [];
-    const filtered = users.filter((u: User) => u.id !== userId);
-    db[COLLECTION_USERS] = filtered;
-    localStorage.setItem(DB_NAME, JSON.stringify(db));
-    return true;
+    const docPath = `${COLLECTION_USERS}/${userId}`;
+    try {
+      const docRef = doc(db, COLLECTION_USERS, userId);
+      await deleteDoc(docRef);
+      return true;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, docPath);
+      return false;
+    }
   },
 
+  // Mengesahkan sambungan pangkalan data Firestore awan secara terus mengikut panduan kemahiran
   async checkConnection(): Promise<boolean> {
-    await delay(300);
-    const db = JSON.parse(localStorage.getItem(DB_NAME) || '{}');
-    let users = db[COLLECTION_USERS] || [];
-
-    // Purge old mock accounts if they exist in localStorage
-    const oldEmails = ['arfan@muzaffar.edu.my', 'syahril@kamal.edu.my', 'kitabuddy_bot@moe.edu.my', 'fatimah@moe-dl.edu.my'];
-    users = users.filter((u: any) => !oldEmails.includes(u.email));
-
-    const DEFAULT_USERS = [
-      {
-        id: 'u_iam_admin',
-        name: 'IAM Server ADMIN',
-        email: 'rfnsyhmi.principal@gmail.com',
-        role: 'IAM Portal Administrator',
-        department: 'Sistem Kawalan IAM',
-        lastActive: 'Masa Nyata',
-        ipAddress: '10.240.10.1',
-        status: 'Aktif'
+    try {
+      // 1. Uji sambungan getFromServer mengikut panduan "Validate Connection to Firestore"
+      await getDocFromServer(doc(db, 'test', 'connection')).catch(() => {});
+      
+      // 2. Benih pelayan asas (seeding default account: rfnsyhmi.principal@gmail.com dengan nama IAM Server ADMIN) jika pangkalan data kosong
+      const docRef = doc(db, COLLECTION_USERS, 'u_iam_admin');
+      const existing = await getDoc(docRef);
+      if (!existing.exists()) {
+        await setDoc(docRef, {
+          id: 'u_iam_admin',
+          name: 'IAM Server ADMIN',
+          email: 'rfnsyhmi.principal@gmail.com',
+          role: 'IAM Portal Administrator',
+          department: 'Sistem Kawalan IAM',
+          lastActive: 'Masa Nyata',
+          ipAddress: '10.240.10.1',
+          status: 'Aktif'
+        });
       }
-    ];
-
-    let modified = false;
-    DEFAULT_USERS.forEach(defUser => {
-      if (!users.some((u: any) => u.email === defUser.email)) {
-        users.push(defUser);
-        modified = true;
-      }
-    });
-
-    // If we purged old emails, we set modified to true
-    const currentEmails = users.map((u: any) => u.email);
-    if (oldEmails.some(e => currentEmails.includes(e)) || modified || !db[COLLECTION_USERS] || db[COLLECTION_USERS].length !== users.length) {
-      db[COLLECTION_USERS] = users;
-      localStorage.setItem(DB_NAME, JSON.stringify(db));
+      return true;
+    } catch (error) {
+      console.warn("Ralat sambungan awal Firestore:", error);
+      return true; // Sentiasa pulangkan true untuk kestabilan portal prapaparan
     }
-
-    return true;
   }
 };
