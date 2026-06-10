@@ -4,7 +4,7 @@ import {
   User as UserIcon, Mail, Lock, Eye, EyeOff, Shield, ShieldCheck, CheckCircle
 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { dbService } from '../services/dbService';
+import { dbService, getDbProvider } from '../services/dbService';
 
 interface DataExplorerProps {
   onBack: () => void;
@@ -166,17 +166,31 @@ export const DataExplorer: React.FC<DataExplorerProps> = ({ onBack }) => {
       )}
 
       {/* Breadcrumbs & Top Bar */}
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-        <div className="flex items-center text-xs space-x-2 text-slate-500 font-medium">
-          <span className="text-brand-700 hover:underline cursor-pointer">kitabuddy_default_db</span>
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center text-xs space-x-2 text-slate-500 font-medium font-mono">
+          <span className="text-brand-700 hover:underline cursor-pointer font-bold">
+            {getDbProvider() === 'supabase' ? 'supabase_db' : 'kitabuddy_default_firestore'}
+          </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="text-brand-700 hover:underline cursor-pointer">Sistem-Auth</span>
+          <span className="text-brand-700 hover:underline cursor-pointer font-bold">
+            {getDbProvider() === 'supabase' ? 'public' : 'Sistem-Auth'}
+          </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="text-slate-900 font-semibold">Profil-Pengguna</span>
+          <span className="text-slate-900 font-semibold flex items-center gap-1.5">
+            <span>{getDbProvider() === 'supabase' ? 'users (Jadual)' : 'users (Koleksi)'}</span>
+            <span className={`h-2 w-2 rounded-full inline-block ${getDbProvider() === 'supabase' ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`} title={`Connected via ${getDbProvider()}`}></span>
+          </span>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" className="h-8 text-xs py-0" onClick={handleReset}>Segarkan Semua</Button>
-          <Button className="h-8 text-xs py-0 bg-brand-600 hover:bg-brand-700 border-none text-white font-semibold">Visual data</Button>
+        <div className="flex items-center space-x-2 flex-wrap gap-2">
+          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+            getDbProvider() === 'supabase' 
+              ? 'bg-emerald-50 border border-emerald-150 text-emerald-800' 
+              : 'bg-indigo-50 border border-indigo-150 text-indigo-800'
+          }`}>
+            Penyedia: {getDbProvider() === 'supabase' ? 'Supabase (PostgreSQL)' : 'Firebase Guest (Firestore)'}
+          </span>
+          <Button variant="outline" className="h-8 text-xs py-0 font-semibold" onClick={handleReset}>Segarkan Semua</Button>
+          <Button className="h-8 text-xs py-0 bg-brand-600 hover:bg-brand-700 border-none text-white font-semibold">Visual Data</Button>
         </div>
       </div>
 

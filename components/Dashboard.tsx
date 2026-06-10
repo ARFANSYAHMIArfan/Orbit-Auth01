@@ -19,25 +19,102 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
   const [language, setLanguage] = useState("Bahasa Melayu (Malaysia)");
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Supabase & Firebase Integration States
+  const [dbProvider, setDbProvider] = useState<'firebase' | 'supabase'>(
+    (localStorage.getItem('DB_PROVIDER') as 'firebase' | 'supabase') || 'supabase'
+  );
+  const [supabaseUrl, setSupabaseUrl] = useState(localStorage.getItem('SUPABASE_URL') || '');
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState(localStorage.getItem('SUPABASE_ANON_KEY') || '');
+  const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState(localStorage.getItem('SUPABASE_SERVICE_ROLE_KEY') || '');
+  const [useServiceKey, setUseServiceKey] = useState(localStorage.getItem('SUPABASE_USE_SERVICE_KEY') !== 'false');
+  
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [connectionMessage, setConnectionMessage] = useState('');
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      // Save DB configurations to localStorage first to let dbService use the chosen provider
+      localStorage.setItem('DB_PROVIDER', dbProvider);
+      localStorage.setItem('SUPABASE_URL', supabaseUrl.trim());
+      localStorage.setItem('SUPABASE_ANON_KEY', supabaseAnonKey.trim());
+      localStorage.setItem('SUPABASE_SERVICE_ROLE_KEY', supabaseServiceRoleKey.trim());
+      localStorage.setItem('SUPABASE_USE_SERVICE_KEY', String(useServiceKey));
+
+      // Save profile updates to current DB
       await dbService.updateUser(user.id, { name, email });
+      
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
+      setTimeout(() => setShowSuccess(false), 4000);
+    } catch (error: any) {
       console.error("Failed to save to database", error);
+      setSaveError(error.message || String(error));
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleTestConnection = async () => {
+    if (!supabaseUrl.trim()) {
+      setConnectionStatus('failed');
+      setConnectionMessage('Sila masukkan URL Supabase anda terlebih dahulu.');
+      return;
+    }
+    
+    setConnectionStatus('testing');
+    
+    // Temporarily cache values for testing connection
+    const oldProvider = localStorage.getItem('DB_PROVIDER');
+    const oldUrl = localStorage.getItem('SUPABASE_URL');
+    const oldKey = localStorage.getItem('SUPABASE_ANON_KEY');
+    const oldServiceKey = localStorage.getItem('SUPABASE_SERVICE_ROLE_KEY');
+    const oldUseService = localStorage.getItem('SUPABASE_USE_SERVICE_KEY');
+    
+    localStorage.setItem('DB_PROVIDER', 'supabase');
+    localStorage.setItem('SUPABASE_URL', supabaseUrl.trim());
+    localStorage.setItem('SUPABASE_ANON_KEY', supabaseAnonKey.trim());
+    localStorage.setItem('SUPABASE_SERVICE_ROLE_KEY', supabaseServiceRoleKey.trim());
+    localStorage.setItem('SUPABASE_USE_SERVICE_KEY', String(useServiceKey));
+    
+    try {
+      const isOk = await dbService.checkConnection();
+      if (isOk) {
+        setConnectionStatus('success');
+        setConnectionMessage('Ujian sambungan berjaya! Kredensial Supabase anda sah.');
+      } else {
+        setConnectionStatus('failed');
+        setConnectionMessage('Gagal menyambung. Sila pastikan jadual "users" wujud di Supabase.');
+      }
+    } catch (err: any) {
+      setConnectionStatus('failed');
+      setConnectionMessage(`Ralat sambungan: ${err.message || 'Gagal menyambung.'}`);
+    } finally {
+      // Restore previous settings if not saved yet
+      if (oldProvider) localStorage.setItem('DB_PROVIDER', oldProvider);
+      else localStorage.removeItem('DB_PROVIDER');
+      
+      if (oldUrl) localStorage.setItem('SUPABASE_URL', oldUrl);
+      else localStorage.removeItem('SUPABASE_URL');
+      
+      if (oldKey) localStorage.setItem('SUPABASE_ANON_KEY', oldKey);
+      else localStorage.removeItem('SUPABASE_ANON_KEY');
+      
+      if (oldServiceKey) localStorage.setItem('SUPABASE_SERVICE_ROLE_KEY', oldServiceKey);
+      else localStorage.removeItem('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (oldUseService) localStorage.setItem('SUPABASE_USE_SERVICE_KEY', oldUseService);
+      else localStorage.removeItem('SUPABASE_USE_SERVICE_KEY');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={onBack} className="p-2 h-auto">
+          <Button variant="ghost" onClick={onBack} className="p-2 h-auto" disabled={isSaving}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -46,14 +123,204 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
           </div>
         </div>
         {showSuccess && (
-          <div className="flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg animate-slide-up border border-emerald-100">
-            <CheckCircle2 className="h-4 w-4" />
-            <span className="text-sm font-medium">Berjaya disimpan ke Pangkalan Data!</span>
+          <div className="flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-2 border border-emerald-150 rounded-lg animate-slide-up self-start sm:self-center">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm font-semibold">Uapan keselamatan berjaya dikemaskini!</span>
           </div>
         )}
       </div>
 
-      <div className="grid gap-6">
+      {saveError && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-900 rounded-xl p-5 text-sm space-y-3 leading-relaxed animate-slide-up shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <span className="text-red-600 font-bold text-base">⚠️</span>
+            <div>
+              <p className="font-bold text-red-900">Gagal Mengemas Kini Rekod Pangkalan Data:</p>
+              <p className="text-xs font-semibold text-red-750 mt-1">Kami cuba mendaftarkan profil/konfigurasi anda tetapi pangkalan data anda menolaknya dengan ralat:</p>
+            </div>
+          </div>
+          <pre className="p-3 bg-white border border-red-100 rounded-lg font-mono text-xs text-red-800 overflow-x-auto whitespace-pre-wrap select-all">
+            {saveError}
+          </pre>
+          {saveError.toLowerCase().includes('row-level security') && (
+            <div className="text-xs space-y-1.5 border-t border-red-150/45 pt-3 text-red-850">
+              <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                <span>💡 Cara Menyelesaikan Isu Row-Level Security (RLS) Supabase:</span>
+              </p>
+              <p>Sila salin perintah SQL di bawah dan jalankannya di dalam <strong>SQL Editor Supabase</strong> anda:</p>
+              <pre className="p-2.5 bg-slate-900 text-slate-200 rounded-md font-mono text-[11px] overflow-x-auto select-all cursor-pointer" title="Klik untuk salin" onClick={(e) => {
+                const range = document.createRange();
+                range.selectNode(e.currentTarget);
+                window.getSelection()?.removeAllRanges();
+                window.getSelection()?.addRange(range);
+              }}>
+                {"ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;"}
+              </pre>
+              <p className="text-[10px] italic pt-1 text-slate-600">Tip: Jika anda mahu menyimpan polisi RLS aktif secara rasmi, sila bina polisi keselamatan yang membenarkan operasi baca/tulis bagi peranan anonim.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid gap-6 bg-slate-50/20">
+        {/* Pilihan Pangkalan Data (Supabase / Firebase) */}
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Database className="h-5 w-5 text-brand-600" />
+              <div>
+                <h3 className="font-semibold text-slate-900">Penyepaduan Pangkalan Data (Supabase & Firebase)</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Pilih dan konfigurasikan sambungan pangkalan data awan pilihan anda.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Penyedia Pangkalan Data Aktif</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setDbProvider('firebase')}
+                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                    dbProvider === 'firebase'
+                      ? 'border-brand-500 ring-2 ring-brand-100 bg-brand-50/30'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="font-bold text-sm text-slate-950">Firebase Firestore</span>
+                  <span className="text-xs text-slate-500 mt-1">Menggunakan pangkalan data serverless terurus keselamatan tinggi yang sedia ada.</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDbProvider('supabase')}
+                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                    dbProvider === 'supabase'
+                      ? 'border-brand-500 ring-2 ring-brand-100 bg-brand-50/30'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="font-bold text-sm text-slate-950">Supabase (PostgreSQL)</span>
+                  <span className="text-xs text-slate-500 mt-1">Sambung ke pangkalan data PostgreSQL berprestasi tinggi milik peribadi anda.</span>
+                </button>
+              </div>
+            </div>
+
+            {dbProvider === 'supabase' && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 animate-slide-up">
+                <h4 className="font-bold text-slate-850 text-xs uppercase tracking-wider">Konfigurasi Sambungan Supabase</h4>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <Input 
+                    label="Supabase URL (API Endpoint)" 
+                    placeholder="https://your-project.supabase.co"
+                    value={supabaseUrl} 
+                    onChange={(e) => setSupabaseUrl(e.target.value)} 
+                    disabled={isSaving}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input 
+                      label="Supabase API Anon Key (Client Key)" 
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5..."
+                      value={supabaseAnonKey} 
+                      onChange={(e) => setSupabaseAnonKey(e.target.value)} 
+                      disabled={isSaving}
+                      type="password"
+                    />
+                    <Input 
+                      label="Supabase Service Role Key (Bypass RLS)" 
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5..."
+                      value={supabaseServiceRoleKey} 
+                      onChange={(e) => setSupabaseServiceRoleKey(e.target.value)} 
+                      disabled={isSaving}
+                      type="password"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 py-1 border-t border-slate-250/20 pt-3">
+                  <input 
+                    type="checkbox" 
+                    id="use_service_key" 
+                    checked={useServiceKey} 
+                    onChange={(e) => setUseServiceKey(e.target.checked)} 
+                    disabled={isSaving}
+                    className="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 border-slate-300 cursor-pointer"
+                  />
+                  <label htmlFor="use_service_key" className="text-xs font-semibold text-slate-705 cursor-pointer selection:bg-transparent">
+                    Pintasi Polisi RLS (Bypass Row-Level Security) menggunakan Service Role Key (Disyorkan jika polisi RLS belum dikonfigurasikan)
+                  </label>
+                </div>
+
+                <div className="bg-slate-100/70 p-4 rounded-lg border border-slate-200 text-xs font-sans space-y-2 text-slate-700 mt-4 leading-relaxed">
+                  <p className="font-bold text-slate-900">💡 Panduan Persediaan SQL Supabase:</p>
+                  <p>Sila tampal dan laksanakan kod SQL ini di dalam <strong>SQL Editor</strong> di papan pemuka Supabase anda untuk membina jadual <code>users</code> serta menetapkan kebenaran keselamatan:</p>
+                  <pre className="p-3 bg-slate-900 text-slate-200 rounded-md font-mono text-[11px] overflow-x-auto select-all cursor-pointer leading-normal" title="Klik untuk pilih semua/Salin" onClick={(e) => {
+                    const range = document.createRange();
+                    range.selectNode(e.currentTarget);
+                    window.getSelection()?.removeAllRanges();
+                    window.getSelection()?.addRange(range);
+                  }}>
+{`-- 1. Bina jadual users jika belum wujud
+create table if not exists public.users (
+  id text primary key,
+  name text not null,
+  email text unique not null,
+  password text,
+  role text,
+  department text,
+  "lastActive" text,
+  "ipAddress" text,
+  status text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 2. PILIHAN A (Sangat Disyorkan): Lumpuhkan RLS demi memudahkan pembangunan setempat
+alter table public.users disable row level security;
+
+-- 3. PILIHAN B (Alternatif): Jika anda mahu mengekalkan RLS aktif, benarkan akses umum untuk table ini
+-- alter table public.users enable row level security;
+-- drop policy if exists "Allow public access" on public.users;
+-- create policy "Allow public access" on public.users for all using (true) with check (true);`}
+                  </pre>
+                  <p className="text-[10px] text-slate-500 italic mt-1">Tip: Menjalankan "disable row level security" (Pilihan A) adalah cara terpantas untuk membina pangkalan data tanpa sebarang ralat polisi RLS.</p>
+                </div>
+
+                <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-200/60 mt-4 gap-4">
+                  <div className="text-xs flex items-center gap-2">
+                    {connectionStatus === 'testing' && (
+                      <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                        <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                        Menguji sambungan pangkalan data...
+                      </span>
+                    )}
+                    {connectionStatus === 'success' && (
+                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-150">
+                        {connectionMessage}
+                      </span>
+                    )}
+                    {connectionStatus === 'failed' && (
+                      <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-150">
+                        {connectionMessage}
+                      </span>
+                    )}
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleTestConnection}
+                    disabled={connectionStatus === 'testing'}
+                    className="h-8.5 text-xs font-semibold"
+                  >
+                    Uji Sambungan Supabase
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <UserIcon className="h-5 w-5 text-brand-600" />

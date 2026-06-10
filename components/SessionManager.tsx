@@ -15,13 +15,20 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ children, onLogo
   const [showWarningModal, setShowWarningModal] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const onLogoutRef = useRef(onLogout);
+  
+  // Track changing onLogout callback
+  useEffect(() => {
+    onLogoutRef.current = onLogout;
+  }, [onLogout]);
+
   // Initialize and tick down timer
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          onLogout();
+          onLogoutRef.current();
           return 0;
         }
         return prev - 1;
@@ -33,7 +40,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ children, onLogo
         clearInterval(timerRef.current);
       }
     };
-  }, [onLogout]);
+  }, []);
 
   // Determine whether warning modal should show up based on time left
   useEffect(() => {
