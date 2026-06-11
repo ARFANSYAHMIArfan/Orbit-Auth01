@@ -20,13 +20,13 @@ if (typeof window !== 'undefined') {
     localStorage.setItem('SUPABASE_ANON_KEY', DEFAULT_ANON_KEY);
     localStorage.setItem('SUPABASE_SERVICE_ROLE_KEY', DEFAULT_SERVICE_ROLE_KEY);
     localStorage.setItem('SUPABASE_USE_SERVICE_KEY', 'true'); // Default to true to bypass RLS errors out of the box
-    localStorage.setItem('DB_PROVIDER', 'supabase');
+    localStorage.setItem('DB_PROVIDER', 'firebase');
   }
 }
 
 // Helper to determine active DB provider
 export function getDbProvider(): 'firebase' | 'supabase' {
-  return (localStorage.getItem('DB_PROVIDER') as 'firebase' | 'supabase') || 'supabase';
+  return (localStorage.getItem('DB_PROVIDER') as 'firebase' | 'supabase') || 'firebase';
 }
 
 // Helper to check and instantiate Supabase client lazily

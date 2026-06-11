@@ -44,12 +44,60 @@
         }
       },
       "required": ["id", "name", "email"]
+    },
+    "SystemAuditLog": {
+      "title": "SystemAuditLog",
+      "description": "Sistem log audit keselamatan MongoDB/Firestore",
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "description": "BSON ObjectId unik"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Isodate masa pendaftaran log"
+        },
+        "action": {
+          "type": "string",
+          "description": "Tindakan operasi dilaksanakan"
+        },
+        "email": {
+          "type": "string",
+          "description": "E-mel pengendali"
+        },
+        "details": {
+          "type": "string",
+          "description": "Perincian aktiviti log"
+        },
+        "ipAddress": {
+          "type": "string",
+          "description": "Alamat IP operasi"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status operasi (Berjaya/Gagal)"
+        },
+        "dbProvider": {
+          "type": "string",
+          "description": "Pembekal pangkalan data aktif"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Metadata tambahan klien"
+        }
+      },
+      "required": ["_id", "timestamp", "action", "email", "details", "status", "dbProvider"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
       "description": "Koleksi direktori kawalan pengguna IAM rasmi"
+    },
+    "/system_audit_logs/{logId}": {
+      "schema": "SystemAuditLog",
+      "description": "Koleksi log audit transaksi sistem"
     }
   }
 }

@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { AuthMode } from '../../types';
 import { dbService } from '../../services/dbService';
+import { logService } from '../../services/logService';
 
 interface AuthFormProps {
   mode: AuthMode;
@@ -39,16 +40,42 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
           // If password exists for this user in DB, we validate it
           if (foundUser.password && foundUser.password !== password) {
             setError('Ralat: Kata laluan tidak sah untuk profil keselamatan IAM ini.');
+            await logService.addLog(
+              'LOG_MASUK',
+              checkEmail,
+              `Percubaan log masuk IAM gagal: Kata laluan tidak sah dimasukkan.`,
+              'Gagal'
+            );
             setIsLoading(false);
             return;
           }
+          
+          await logService.addLog(
+            'LOG_MASUK',
+            foundUser.email,
+            `Log masuk berjaya untuk akaun '${foundUser.name}' via sistem keselamatan Zero Trust.`,
+            'Berjaya'
+          );
           onLogin(foundUser.name, foundUser.email);
         } else {
           // Allow first-time login auto-creation if not in DB yet (for backward compatibility / convenience)
-          onLogin(name || checkEmail.split('@')[0], checkEmail);
+          const generatedName = name || checkEmail.split('@')[0];
+          await logService.addLog(
+            'LOG_MASUK',
+            checkEmail,
+            `Log masuk pertama/auto-penciptaan akaun untuk '${generatedName}' ke sistem keselamatan.`,
+            'Berjaya'
+          );
+          onLogin(generatedName, checkEmail);
         }
-      } catch (err) {
+      } catch (err: any) {
         setError('Siri pengesahan pangkalan data terputus. Sila cuba lagi.');
+        await logService.addLog(
+          'LOG_MASUK',
+          checkEmail,
+          `Gagal log masuk: Ralat pangkalan data utama - ${err.message || String(err)}`,
+          'Gagal'
+        );
         setIsLoading(false);
       }
     } else if (mode === 'register') {
@@ -57,6 +84,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
           const foundUser = await dbService.findUser(checkEmail);
           if (foundUser) {
             setError('Ralat: Alamat emel ini telah didaftarkan dalam rekod IAM.');
+            await logService.addLog(
+              'DAFTAR_PENGGUNA',
+              checkEmail,
+              `Gagal mendaftar akaun: Alamat emel '${checkEmail}' sudah wujud.`,
+              'Gagal'
+            );
             setIsLoading(false);
             return;
           }
@@ -74,9 +107,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
             status: 'Aktif'
           });
 
+          await logService.addLog(
+            'DAFTAR_PENGGUNA',
+            checkEmail,
+            `Pengguna baru '${name.trim()}' berjaya mendaftarkan profil IAM baharu.`,
+            'Berjaya'
+          );
+
           onLogin(name.trim(), checkEmail);
-        } catch (err) {
+        } catch (err: any) {
           setError('Gagal mendaftar pengguna baru ke pangkalan data.');
+          await logService.addLog(
+            'DAFTAR_PENGGUNA',
+            checkEmail,
+            `Ralat mendaftar profil: ${err.message || String(err)}`,
+            'Gagal'
+          );
           setIsLoading(false);
         }
       } else {

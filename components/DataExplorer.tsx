@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { dbService, getDbProvider } from '../services/dbService';
+import { logService } from '../services/logService';
 
 interface DataExplorerProps {
   onBack: () => void;
@@ -89,6 +90,14 @@ export const DataExplorer: React.FC<DataExplorerProps> = ({ onBack }) => {
       status: 'Aktif'
     });
 
+    // Auto log transaction
+    await logService.addLog(
+      'TAMBAH_PENGGUNA',
+      email.trim().toLowerCase(),
+      `Menambah profil pengguna baru ID: ${generatedId} (${name.trim()}) ke direktori keselamatan.`,
+      'Berjaya'
+    );
+
     setActionSuccess('Pengguna baru berjaya ditambahkan ke dalam direktori pangkalan data.');
     setTimeout(() => setActionSuccess(null), 4000);
 
@@ -133,6 +142,14 @@ export const DataExplorer: React.FC<DataExplorerProps> = ({ onBack }) => {
       status: docToEdit?.status || 'Aktif'
     });
 
+    // Auto log transaction
+    await logService.addLog(
+      'KEMASKINI_PROFIL',
+      email.trim().toLowerCase(),
+      `Mengemas kini profil pengguna ID: ${generatedId} (${name.trim()}) dalam pangkalan data.`,
+      'Berjaya'
+    );
+
     setActionSuccess('Rekod profil pengguna berjaya dikemas kini.');
     setTimeout(() => setActionSuccess(null), 4000);
     
@@ -147,7 +164,21 @@ export const DataExplorer: React.FC<DataExplorerProps> = ({ onBack }) => {
     if (!confirmDelete) return;
 
     setIsLoading(true);
+    
+    const docToDelete = documents.find(d => d.id === selectedDocId);
+    const deletedEmail = docToDelete?.email || 'sistem_anonim@kitabuddy.gov.my';
+    const deletedName = docToDelete?.name || selectedDocId;
+
     await dbService.deleteUser(selectedDocId);
+
+    // Auto log transaction
+    await logService.addLog(
+      'PADAM_PENGGUNA',
+      deletedEmail,
+      `Profil pengguna ID: ${selectedDocId} (${deletedName}) berjaya dikeluarkan secara kekal dari direktori.`,
+      'Berjaya'
+    );
+
     setSelectedDocId(null);
     setActionSuccess('Talian profil pengguna telah dikeluarkan daripada sistem keselamatan.');
     setTimeout(() => setActionSuccess(null), 4000);

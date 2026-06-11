@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe, CheckCircle2, Database } from 'lucide-react';
+import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe, CheckCircle2, Database, Terminal } from 'lucide-react';
 import { ConnectModal } from './ConnectModal';
 import { DataExplorer } from './DataExplorer';
 import { StatusView } from './StatusView';
+import { MongoLogsView } from './MongoLogsView';
 import { dbService } from '../services/dbService';
+import { logService } from '../services/logService';
 
 interface DashboardProps {
   user: User;
@@ -33,6 +35,18 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
   const [connectionMessage, setConnectionMessage] = useState('');
 
+  // MongoDB System Logging States
+  const [mongoEnabled, setMongoEnabled] = useState(localStorage.getItem('MONGODB_LOGGING_ENABLED') !== 'false');
+  const [mongoUri, setMongoUri] = useState(
+    localStorage.getItem('MONGODB_URI') || 
+    'mongodb+srv://arfan_admin:********@kitabuddy-cluster.gcp.mongodb.net/audit_db?retryWrites=true&w=majority'
+  );
+  const [mongoDbName, setMongoDbName] = useState(localStorage.getItem('MONGODB_DB_NAME') || 'kitabuddy_zero_trust');
+  const [mongoCollection, setMongoCollection] = useState(localStorage.getItem('MONGODB_COLLECTION_NAME') || 'system_audit_logs');
+  
+  const [mongoTestStatus, setMongoTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [mongoTestMessage, setMongoTestMessage] = useState('');
+
   const handleSave = async () => {
     setIsSaving(true);
     setSaveError(null);
@@ -44,17 +58,54 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
       localStorage.setItem('SUPABASE_SERVICE_ROLE_KEY', supabaseServiceRoleKey.trim());
       localStorage.setItem('SUPABASE_USE_SERVICE_KEY', String(useServiceKey));
 
+      // Save MongoDB Logging configurations
+      localStorage.setItem('MONGODB_LOGGING_ENABLED', String(mongoEnabled));
+      localStorage.setItem('MONGODB_URI', mongoUri.trim());
+      localStorage.setItem('MONGODB_DB_NAME', mongoDbName.trim());
+      localStorage.setItem('MONGODB_COLLECTION_NAME', mongoCollection.trim());
+
       // Save profile updates to current DB
       await dbService.updateUser(user.id, { name, email });
+
+      // Log success to MongoDB system audit log
+      await logService.addLog(
+        'KEMASKINI_TETAPAN',
+        user.email,
+        `Pengguna '${user.email}' mengemaskini tetapan sistem IAM dan profil database.`,
+        'Berjaya'
+      );
       
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 4000);
+      setTimeout(() => setShowSuccess(false), 4500);
     } catch (error: any) {
       console.error("Failed to save to database", error);
       setSaveError(error.message || String(error));
+
+      // Log fail to MongoDB system audit log
+      await logService.addLog(
+        'KEMASKINI_TETAPAN',
+        user.email,
+        `Gagal menyimpan profil: ${error.message || String(error)}`,
+        'Gagal'
+      );
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleTestMongo = async () => {
+    setMongoTestStatus('testing');
+    const result = await logService.testConnection(mongoUri, mongoDbName, mongoCollection);
+    setMongoTestStatus(result.success ? 'success' : 'failed');
+    setMongoTestMessage(result.message);
+
+    // Record the test event
+    await logService.addLog(
+      'MENGUJI_MONGODB',
+      user.email,
+      `Ujian penyambungan pemandu log MongoDB dilakukan untuk ${mongoDbName}.${mongoCollection}.`,
+      result.success ? 'Berjaya' : 'Gagal'
+    );
   };
 
   const handleTestConnection = async () => {
@@ -321,6 +372,99 @@ alter table public.users disable row level security;
           </div>
         </div>
 
+        {/* Pilihan Penyepaduan MongoDB Log Sistem */}
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Database className="h-5 w-5 text-emerald-600" />
+              <div>
+                <h3 className="font-semibold text-slate-900">Penyepaduan MongoDB Log Sistem</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Selaraskan setiap transaksi keselamatan IAM dan navigasi ke pangkalan data dokumen MongoDB secara masa nyata.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-bold text-sm text-slate-950 block">Status Pengaktifan Log</span>
+                <span className="text-xs text-slate-500">Apabila diaktifkan, setiap pendaftaran, kemas kini, pertanyaan, dan tindakan data explorer akan dialirkan ke MongoDB Cluster anda.</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={mongoEnabled}
+                  onChange={(e) => setMongoEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+
+            {mongoEnabled && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 animate-slide-up">
+                <h4 className="font-bold text-slate-850 text-xs uppercase tracking-wider">Konfigurasi Sambungan MongoDB Atlas (Klien Terjamin)</h4>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <Input 
+                    label="MongoDB Connection URI" 
+                    placeholder="mongodb+srv://username:password@cluster.mongodb.net/database"
+                    value={mongoUri} 
+                    onChange={(e) => setMongoUri(e.target.value)} 
+                    disabled={isSaving}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input 
+                      label="Nama Database (Database Name)" 
+                      placeholder="kitabuddy_zero_trust"
+                      value={mongoDbName} 
+                      onChange={(e) => setMongoDbName(e.target.value)} 
+                      disabled={isSaving}
+                    />
+                    <Input 
+                      label="Nama Koleksi (Collection Name)" 
+                      placeholder="system_audit_logs"
+                      value={mongoCollection} 
+                      onChange={(e) => setMongoCollection(e.target.value)} 
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-150/40 mt-4 gap-4">
+                  <div className="text-xs flex items-center gap-2">
+                    {mongoTestStatus === 'testing' && (
+                      <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                        <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                        Menguji sambungan kluster MongoDB...
+                      </span>
+                    )}
+                    {mongoTestStatus === 'success' && (
+                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-150">
+                        {mongoTestMessage}
+                      </span>
+                    )}
+                    {mongoTestStatus === 'failed' && (
+                      <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-150">
+                        {mongoTestMessage}
+                      </span>
+                    )}
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleTestMongo}
+                    disabled={mongoTestStatus === 'testing'}
+                    className="h-8.5 text-xs font-semibold"
+                  >
+                    Uji Sambungan MongoDB
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <UserIcon className="h-5 w-5 text-brand-600" />
@@ -385,7 +529,7 @@ alter table public.users disable row level security;
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
-  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status' | 'logs'>('home');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const items = [
@@ -420,6 +564,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       href: null,
       onClick: () => setCurrentView('settings'),
       icon: Settings
+    },
+    { 
+      title: 'Log Audit MongoDB', 
+      desc: 'Pemantauan BSON audit logs keselamatan sistem.', 
+      color: 'bg-emerald-50 text-emerald-900 border border-emerald-100',
+      href: null,
+      onClick: () => setCurrentView('logs'),
+      icon: Terminal
     },
   ];
 
@@ -463,15 +615,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 Sistem berkonsepkan kawalan data tempatan yang selamat dan lestari.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mt-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl mx-auto mt-12">
                 {items.map((item, i) => {
                   const CardContent = () => (
                     <>
                       <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <item.icon className="h-5 w-5" />
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
-                      <p className="text-slate-500 text-sm">{item.desc}</p>
+                      <h3 className="text-[17px] font-semibold text-slate-900 mb-2 truncate" title={item.title}>{item.title}</h3>
+                      <p className="text-slate-500 text-sm line-clamp-2 md:line-clamp-3">{item.desc}</p>
                     </>
                   );
 
@@ -482,7 +634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group block text-left"
+                        className="p-5 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group block text-left"
                       >
                         <CardContent />
                       </a>
@@ -493,7 +645,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                     <div 
                       key={i} 
                       onClick={item.onClick}
-                      className="p-6 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group text-left"
+                      className="p-5 rounded-xl border border-slate-100 hover:border-brand-200 hover:shadow-md transition-all cursor-pointer bg-white group text-left"
                     >
                       <CardContent />
                     </div>
@@ -506,6 +658,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <SettingsView onBack={() => setCurrentView('home')} user={user} />
         ) : currentView === 'status' ? (
           <StatusView onBack={() => setCurrentView('home')} />
+        ) : currentView === 'logs' ? (
+          <MongoLogsView onBack={() => setCurrentView('home')} userEmail={user.email} />
         ) : (
           <DataExplorer onBack={() => setCurrentView('home')} />
         )}
