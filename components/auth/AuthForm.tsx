@@ -5,14 +5,16 @@ import { Input } from '../ui/Input';
 import { AuthMode } from '../../types';
 import { dbService } from '../../services/dbService';
 import { logService } from '../../services/logService';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 
 interface AuthFormProps {
   mode: AuthMode;
   setMode: (mode: AuthMode) => void;
   onLogin: (name: string, email: string) => void;
+  isClerkActive?: boolean;
 }
 
-export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) => {
+export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin, isClerkActive = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -21,6 +23,59 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, setMode, onLogin }) =>
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  if (isClerkActive) {
+    return (
+      <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center animate-fade-in py-8">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 mb-1">Pintu Kawalan Zero Trust</h1>
+          <p className="text-slate-500 text-xs text-balance">Log masuk siri penuh disokong oleh Identity Provider Clerk</p>
+        </div>
+        
+        {mode === 'login' ? (
+          <div className="w-full flex flex-col items-center">
+            <SignIn 
+              routing="virtual" 
+              signUpUrl="/sign-up" 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto shadow-xl border border-slate-200/60 rounded-2xl overflow-hidden",
+                  card: "shadow-none border-none p-6",
+                  footerActionLink: "text-brand-600 hover:text-brand-500 font-semibold"
+                }
+              }}
+            />
+            <p className="text-xs text-slate-400 mt-4">
+              Tiada akaun?{' '}
+              <button onClick={() => setMode('register')} className="font-medium text-brand-600 hover:underline">
+                Daftar profil baru
+              </button>
+            </p>
+          </div>
+        ) : (
+          <div className="w-full flex flex-col items-center">
+            <SignUp 
+              routing="virtual" 
+              signInUrl="/sign-in" 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto shadow-xl border border-slate-200/60 rounded-2xl overflow-hidden",
+                  card: "shadow-none border-none p-6",
+                  footerActionLink: "text-brand-600 hover:text-brand-500 font-semibold"
+                }
+              }}
+            />
+            <p className="text-xs text-slate-400 mt-4">
+              Sudah mempunyai akaun?{' '}
+              <button onClick={() => setMode('login')} className="font-medium text-brand-600 hover:underline">
+                Log masuk semula
+              </button>
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

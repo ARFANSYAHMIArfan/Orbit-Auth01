@@ -152,7 +152,21 @@ export const dbService = {
       const client = getSupabaseClient();
       if (!client) throw new Error("Pangkalan data Supabase belum dikonfigurasikan.");
       
-      const payload: any = { id: userId, ...updates };
+      // Ambil rekod sedia ada terlebih dahulu untuk memastikan tiada kolum wajib (seperti email) dikosongkan semasa kemas kini
+      let existingRecord: any = null;
+      try {
+        const { data } = await client
+          .from(COLLECTION_USERS)
+          .select('*')
+          .eq('id', userId);
+        if (data && data.length > 0) {
+          existingRecord = data[0];
+        }
+      } catch (e) {
+        console.warn("Ralat pra-pengambilan rekod Supabase:", e);
+      }
+      
+      const payload: any = { id: userId, ...existingRecord, ...updates };
       
       // Mengurangkan ralat sekiranya kolum tiada (seperti 'password' dll) dalam jadual Supabase milik pengguna.
       // Kita akan menapis kolum yang tiada secara dinamik dan mencuba semula secara automatik.
