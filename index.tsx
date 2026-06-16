@@ -4,6 +4,7 @@ import App from './App';
 import { ClerkProvider } from '@clerk/clerk-react';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const SUBDOMAIN = import.meta.env.VITE_CLERK_SUBDOMAIN;
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,10 +13,25 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
-if (PUBLISHABLE_KEY && PUBLISHABLE_KEY.trim().startsWith('pk_')) {
+const cleanKey = PUBLISHABLE_KEY ? PUBLISHABLE_KEY.trim() : '';
+const isLiveKey = cleanKey.startsWith('pk_live_');
+const isProductionDomain = typeof window !== 'undefined' && (
+  window.location.hostname === 'kitabuddy.dpdns.org' || 
+  window.location.hostname.endsWith('.kitabuddy.dpdns.org')
+);
+
+// Hanya aktifkan Clerk di persekitaran pratonton jika ia adalah Test Key,
+// atau jika ia Live Key di domain produksi yang sah bagi mengelakkan ralat CORS Clerk.
+const shouldEnableClerk = !!(
+  cleanKey.startsWith('pk_') && 
+  (!isLiveKey || isProductionDomain)
+);
+
+if (shouldEnableClerk) {
+  const clerkSubdomain = SUBDOMAIN && SUBDOMAIN.trim() ? SUBDOMAIN.trim() : undefined;
   root.render(
     <React.StrictMode>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY.trim()}>
+      <ClerkProvider publishableKey={cleanKey} subdomain={clerkSubdomain}>
         <App />
       </ClerkProvider>
     </React.StrictMode>

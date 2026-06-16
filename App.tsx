@@ -9,7 +9,20 @@ import { logService } from './services/logService';
 import { SessionManager } from './components/SessionManager';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const HAS_CLERK = !!(PUBLISHABLE_KEY && PUBLISHABLE_KEY.trim().startsWith('pk_'));
+
+const cleanKey = PUBLISHABLE_KEY ? PUBLISHABLE_KEY.trim() : '';
+const isLiveKey = cleanKey.startsWith('pk_live_');
+const isProductionDomain = typeof window !== 'undefined' && (
+  window.location.hostname === 'kitabuddy.dpdns.org' || 
+  window.location.hostname.endsWith('.kitabuddy.dpdns.org')
+);
+
+// Hanya aktifkan modul Clerk jika ia adalah Test Key (di mana-mana sahaja)
+// atau jika ia Live Key di domain produksi sah bagi mengelakkan ralat CORS Clerk JS.
+const HAS_CLERK = !!(
+  cleanKey.startsWith('pk_') && 
+  (!isLiveKey || isProductionDomain)
+);
 
 // --- CLERK ENABLED MAIN CONTENT LAYER ---
 const ClerkAppContent: React.FC = () => {
@@ -220,13 +233,21 @@ const SandboxAppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex bg-brand-50 flex-col">
-      {/* Informational Alert Header when Clerk publishable key is missing */}
+      {/* Informational Alert Header when Clerk publishable key is missing or we are in preview */}
       <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-3 text-center text-xs font-medium flex items-center justify-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
         <span>
-          <strong>Clerk Belum Dikembangkan Sepenuhnya:</strong> Sila definesikan 
-          <code className="mx-1 px-1.5 py-0.5 bg-amber-100 rounded border border-amber-300 font-mono text-[11px]">VITE_CLERK_PUBLISHABLE_KEY</code> 
-          di menu Settings aplikasi untuk mengaktifkan log masuk SSO Clerk rasmi. Anda masih boleh menggunakan mod pembangun simulasi di bawah.
+          {PUBLISHABLE_KEY && PUBLISHABLE_KEY.trim().startsWith('pk_live_') ? (
+            <>
+              <strong>⚠️ Pintu Gerbang SSO Clerk Dikesan (Live):</strong> Kunci pengeluaran (Production Key) anda dikesan berekreasi. Log masuk SSO Clerk rasmi aktif sepenuhnya di domain pengeluaran anda <a href="https://kitabuddy.dpdns.org" target="_blank" rel="noopener noreferrer" className="underline font-bold text-brand-700">kitabuddy.dpdns.org</a>. Di sini (pratonton AI Studio), sistem menggunakan <strong>Mod Sandbox Simulasi</strong> secara automatik untuk kelancaran ujian mendapat kebenaran tanpa ralat CORS Clerk.
+            </>
+          ) : (
+            <>
+              <strong>Clerk Belum Dikembangkan Sepenuhnya:</strong> Sila definesikan 
+              <code className="mx-1 px-1.5 py-0.5 bg-amber-100 rounded border border-amber-300 font-mono text-[11px]">VITE_CLERK_PUBLISHABLE_KEY</code> 
+              di menu Settings aplikasi untuk mengaktifkan log masuk SSO Clerk rasmi. Anda masih boleh menggunakan mod pembangun simulasi di bawah.
+            </>
+          )}
         </span>
       </div>
 

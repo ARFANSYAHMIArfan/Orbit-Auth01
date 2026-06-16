@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { LogOut, Sparkles, Activity, Folder, Settings, ArrowLeft, User as UserIcon, Bell, Shield, Globe, CheckCircle2, Database, Terminal } from 'lucide-react';
 import { ConnectModal } from './ConnectModal';
+import { AppDirectory } from './AppDirectory';
 import { DataExplorer } from './DataExplorer';
 import { StatusView } from './StatusView';
 import { MongoLogsView } from './MongoLogsView';
@@ -529,7 +530,7 @@ alter table public.users disable row level security;
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
-  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status' | 'logs'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status' | 'logs' | 'apps'>('home');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const items = [
@@ -542,12 +543,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       icon: Activity
     },
     { 
-      title: 'Projek', 
-      desc: 'Urus tugas pembangunan aktif anda.', 
+      title: 'Capaian Aplikasi', 
+      desc: 'Paparkan dan urus direktori portal aplikasi capaian bagi semua kakitangan dan pelajar.', 
       color: 'bg-indigo-50 text-indigo-700',
       href: null,
-      onClick: () => setIsConnectModalOpen(true),
-      icon: Folder
+      onClick: () => setCurrentView('apps'),
+      icon: Globe
     },
     { 
       title: 'Data Explorer', 
@@ -660,6 +661,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <StatusView onBack={() => setCurrentView('home')} />
         ) : currentView === 'logs' ? (
           <MongoLogsView onBack={() => setCurrentView('home')} userEmail={user.email} />
+        ) : currentView === 'apps' ? (
+          <AppDirectory onBack={() => setCurrentView('home')} user={user} />
         ) : (
           <DataExplorer onBack={() => setCurrentView('home')} />
         )}
