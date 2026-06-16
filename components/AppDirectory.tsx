@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, BookOpen, Award, Clock, FileText, Key, Plus, Trash2, 
   ExternalLink, Globe, Lock, ShieldCheck, ShieldAlert, ArrowLeft,
-  CheckCircle2, AlertTriangle, Sparkles, Filter, HelpCircle, Mail, UserCheck
+  CheckCircle2, AlertTriangle, Sparkles, Filter, HelpCircle, Mail, UserCheck, Inbox, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { User } from '../types';
 import { Button } from './ui/Button';
@@ -17,82 +17,62 @@ export interface AppItem {
   name: string;
   description: string;
   url: string;
-  category: 'Akademik' | 'Hal Ehwal Pelajar' | 'Utiliti' | 'Sistem Pentadbiran';
+  category: 'Akademik' | 'Hal Ehwal Pelajar' | 'Utiliti' | 'Sistem Pentadbiran' | 'Pendidikan';
   accessLevel: 'Semua' | 'Kakitangan' | 'Pentadbir';
   allowedEmails?: string[];
   status: 'Aktif' | 'Penyelenggaraan' | 'Ujian';
   iconName: 'BookOpen' | 'Award' | 'Clock' | 'FileText' | 'Key' | 'Globe';
 }
 
+export interface AppRequest {
+  id: string;
+  name: string;
+  url: string;
+  category: 'Akademik' | 'Hal Ehwal Pelajar' | 'Utiliti' | 'Sistem Pentadbiran' | 'Pendidikan';
+  description: string;
+  requesterEmail: string;
+  status: 'Menunggu Kelulusan' | 'Diluluskan' | 'Ditolak';
+  timestamp: string;
+}
+
 const DEFAULT_APPS: AppItem[] = [
   {
-    id: 'app1',
-    name: 'KitaBUDDY e-Library',
-    description: 'Pusat carian buku digital terkemuka, pengurusan pinjaman perpustakaan, dan bahan bacaan dalam talian pintar.',
-    url: 'https://library.kitabuddy.dpdns.org',
-    category: 'Akademik',
+    id: 'app-safe',
+    name: 'Sistem Laporan Buli (S.A.F.E)',
+    description: 'Sistem pelaporan salah laku dan buli secara selamat, pantas dan sulit demi memelihara kebajikan serta keselamatan murid.',
+    url: 'https://safe.kitabuddy.dpdns.org/',
+    category: 'Utiliti',
+    accessLevel: 'Semua',
+    status: 'Aktif',
+    iconName: 'Key',
+    allowedEmails: []
+  },
+  {
+    id: 'app-kitabuddy',
+    name: 'Aplikasi KitaBUDDY',
+    description: 'Aplikasi utama KitaBUDDY untuk rujukan pembelajaran digital bersepadu, perpustakaan pintar, dan interaksi pintar.',
+    url: 'https://app.kitabuddy.dpdns.org/',
+    category: 'Pendidikan',
     accessLevel: 'Semua',
     status: 'Aktif',
     iconName: 'BookOpen',
     allowedEmails: []
-  },
-  {
-    id: 'app2',
-    name: 'Sistem Merit, Demerit & Disiplin',
-    description: 'Perekodan merit demerit serta tindak salah laku pelajar semasa sekolah demi pemantauan disiplin berterusan.',
-    url: 'https://disiplin.kitabuddy.dpdns.org',
-    category: 'Hal Ehwal Pelajar',
-    accessLevel: 'Kakitangan',
-    status: 'Aktif',
-    iconName: 'Award',
-    allowedEmails: ['m-10531068@moe-dl.edu.my']
-  },
-  {
-    id: 'app3',
-    name: 'Kitabuddy e-Hadir & Kedatagan',
-    description: 'Sistem perekodan kehadiran serta siri log keaktifan kakitangan dan pelajar secara masa nyata dengan integrasi QR.',
-    url: 'https://ehadir.kitabuddy.dpdns.org',
-    category: 'Sistem Pentadbiran',
-    accessLevel: 'Kakitangan',
-    status: 'Aktif',
-    iconName: 'Clock',
-    allowedEmails: []
-  },
-  {
-    id: 'app4',
-    name: 'Portal Peperiksaan SAPS-K',
-    description: 'Paparan graf perkembangan akademik bulanan, analisis PBD (Pentaksiran Bilik Darjah) serta keputusan ujian semasa.',
-    url: 'https://saps.kitabuddy.dpdns.org',
-    category: 'Akademik',
-    accessLevel: 'Semua',
-    status: 'Aktif',
-    iconName: 'FileText',
-    allowedEmails: []
-  },
-  {
-    id: 'app5',
-    name: 'Pintu Gerbang Autentikasi SAML / JWT',
-    description: 'Utiliti pengesahan utama bertaraf Zero Trust. Papan pemuka konfigurasi sijil sso serta pemantauan sesi bersilang portal.',
-    url: 'https://accounts.kitabuddy.dpdns.org',
-    category: 'Utiliti',
-    accessLevel: 'Pentadbir',
-    status: 'Ujian',
-    iconName: 'Key',
-    allowedEmails: ['m-10531068@moe-dl.edu.my', 'arfan@muzaffar.edu.my']
   }
 ];
 
 export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
   const [apps, setApps] = useState<AppItem[]>([]);
+  const [requests, setRequests] = useState<AppRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   
   // App Creation Form State
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showRequestsPanel, setShowRequestsPanel] = useState(false);
   const [newAppName, setNewAppName] = useState('');
   const [newAppDesc, setNewAppDesc] = useState('');
   const [newAppUrl, setNewAppUrl] = useState('');
-  const [newAppCategory, setNewAppCategory] = useState<AppItem['category']>('Akademik');
+  const [newAppCategory, setNewAppCategory] = useState<AppItem['category']>('Education' as any === 'Pendidikan' ? 'Pendidikan' : 'Pendidikan');
   const [newAppAccess, setNewAppAccess] = useState<AppItem['accessLevel']>('Semua');
   const [newAppIcon, setNewAppIcon] = useState<AppItem['iconName']>('Globe');
   
@@ -107,17 +87,30 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
   const [launchingApp, setLaunchingApp] = useState<AppItem | null>(null);
   const [launchProgress, setLaunchProgress] = useState(0);
 
+  const adminEmail = 'rfnsyhmi.principal@gmail.com';
+  const isAdmin = user.email.toLowerCase() === adminEmail.toLowerCase();
+
+  // Load state from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('kitabuddy_accessible_apps');
-    if (saved) {
+    const savedApps = localStorage.getItem('kitabuddy_accessible_apps');
+    if (savedApps) {
       try {
-        setApps(JSON.parse(saved));
+        setApps(JSON.parse(savedApps));
       } catch (e) {
         setApps(DEFAULT_APPS);
       }
     } else {
       setApps(DEFAULT_APPS);
       localStorage.setItem('kitabuddy_accessible_apps', JSON.stringify(DEFAULT_APPS));
+    }
+
+    const savedReqs = localStorage.getItem('kitabuddy_app_requests');
+    if (savedReqs) {
+      try {
+        setRequests(JSON.parse(savedReqs));
+      } catch (e) {
+        setRequests([]);
+      }
     }
   }, []);
 
@@ -126,7 +119,13 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
     localStorage.setItem('kitabuddy_accessible_apps', JSON.stringify(updatedApps));
   };
 
-  const handleCreateApp = (e: React.FormEvent) => {
+  const saveRequests = (updatedReqs: AppRequest[]) => {
+    setRequests(updatedReqs);
+    localStorage.setItem('kitabuddy_app_requests', JSON.stringify(updatedReqs));
+  };
+
+  // Form submission: either adds directly (admin) or submits a request (others)
+  const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAppName.trim() || !newAppUrl.trim()) {
       showAlert('error', 'Nama aplikasi dan Pautan URL adalah wajib!');
@@ -138,34 +137,97 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
       urlFormatted = 'https://' + urlFormatted;
     }
 
-    const newApp: AppItem = {
-      id: Math.random().toString(36).substring(2, 9),
-      name: newAppName.trim(),
-      description: newAppDesc.trim() || 'Tiada huraian disediakan untuk aplikasi capaian ini.',
-      url: urlFormatted,
-      category: newAppCategory,
-      accessLevel: newAppAccess,
-      status: 'Aktif',
-      iconName: newAppIcon,
-      allowedEmails: []
-    };
+    if (isAdmin) {
+      // Create and save application directly
+      const newApp: AppItem = {
+        id: Math.random().toString(36).substring(2, 9),
+        name: newAppName.trim(),
+        description: newAppDesc.trim() || 'Tiada huraian disediakan untuk aplikasi capaian ini.',
+        url: urlFormatted,
+        category: newAppCategory,
+        accessLevel: newAppAccess,
+        status: 'Aktif',
+        iconName: newAppIcon,
+        allowedEmails: []
+      };
 
-    const updated = [...apps, newApp];
-    saveApps(updated);
+      const updated = [...apps, newApp];
+      saveApps(updated);
+      showAlert('success', `Aplikasi '${newApp.name}' berjaya ditambah terus oleh Pentadbir!`);
+    } else {
+      // Create request for approval
+      const newRequest: AppRequest = {
+        id: Math.random().toString(36).substring(2, 9),
+        name: newAppName.trim(),
+        url: urlFormatted,
+        category: newAppCategory,
+        description: newAppDesc.trim() || 'Permohonan capaian aplikasi ke kabin KitaBUDDY.',
+        requesterEmail: user.email,
+        status: 'Menunggu Kelulusan',
+        timestamp: new Date().toLocaleDateString('ms-MY', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      };
+
+      const updated = [...requests, newRequest];
+      saveRequests(updated);
+      showAlert('success', `Permohonan bagi '${newRequest.name}' telah dihantar kepada Pentadbir untuk diluluskan!`);
+    }
     
     // Reset Form
     setNewAppName('');
     setNewAppDesc('');
     setNewAppUrl('');
-    setNewAppCategory('Akademik');
+    setNewAppCategory('Pendidikan');
     setNewAppAccess('Semua');
     setNewAppIcon('Globe');
     setShowAddForm(false);
-    showAlert('success', `Aplikasi '${newApp.name}' berjaya ditambah ke direktori!`);
+  };
+
+  // Admin approves request
+  const handleApproveRequest = (req: AppRequest) => {
+    const updatedRequests = requests.map(r => r.id === req.id ? { ...r, status: 'Diluluskan' as const } : r);
+    saveRequests(updatedRequests);
+
+    // Map appropriate iconName based on category
+    let iconName: AppItem['iconName'] = 'Globe';
+    if (req.category === 'Pendidikan' || req.category === 'Akademik') iconName = 'BookOpen';
+    else if (req.category === 'Utiliti') iconName = 'Key';
+    else if (req.category === 'Sistem Pentadbiran') iconName = 'Clock';
+    else if (req.category === 'Hal Ehwal Pelajar') iconName = 'Award';
+
+    const newApp: AppItem = {
+      id: req.id,
+      name: req.name,
+      description: req.description,
+      url: req.url,
+      category: req.category,
+      accessLevel: 'Semua',
+      status: 'Aktif',
+      iconName,
+      allowedEmails: []
+    };
+
+    const updatedApps = [...apps, newApp];
+    saveApps(updatedApps);
+    showAlert('success', `Permohonan '${req.name}' berjaya diluluskan dan dimasukkan ke Direktori Utama!`);
+  };
+
+  // Admin rejects request
+  const handleRejectRequest = (reqId: string) => {
+    const updatedRequests = requests.map(r => r.id === reqId ? { ...r, status: 'Ditolak' as const } : r);
+    saveRequests(updatedRequests);
+    showAlert('error', 'Permohonan telah ditolak.');
   };
 
   const handleDeleteApp = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAdmin) {
+      showAlert('error', 'Hanya Pentadbir sah sahaja yang dibenarkan memadam aplikasi.');
+      return;
+    }
     const toDelete = apps.find(a => a.id === id);
     const updated = apps.filter(a => a.id !== id);
     saveApps(updated);
@@ -218,13 +280,11 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
   };
 
   const checkHasAccess = (app: AppItem): boolean => {
-    // 1. Check if user is on whitelist
     if (app.allowedEmails && app.allowedEmails.includes(user.email.toLowerCase())) {
       return true;
     }
 
-    // 2. Check if accesslevel fits
-    const role = user.role || 'Pelajar'; // Default low-level role
+    const role = user.role || 'Pelajar';
 
     if (app.accessLevel === 'Semua') {
       return true;
@@ -235,7 +295,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
     }
 
     if (app.accessLevel === 'Pentadbir') {
-      return role === 'Pentadbir' || role === 'CISO' || role === 'Developer';
+      return role === 'Pentadbir' || role === 'CISO' || role === 'Developer' || isAdmin;
     }
 
     return false;
@@ -293,7 +353,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['Semua', 'Akademik', 'Hal Ehwal Pelajar', 'Sistem Pentadbiran', 'Utiliti'];
+  const categories = ['Semua', 'Pendidikan', 'Utiliti', 'Akademik', 'Hal Ehwal Pelajar', 'Sistem Pentadbiran'];
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
@@ -312,7 +372,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-bold text-slate-400">
-                <span>MEMASANG PINTO GERBANG</span>
+                <span>MEMASANG PINTU GERBANG</span>
                 <span>{launchProgress}%</span>
               </div>
               <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
@@ -338,24 +398,42 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Capaian Aplikasi Sekolah</h2>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Pustaka & Direktori Aplikasi</h2>
               <span className="bg-brand-100 text-brand-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Masa Nyata
               </span>
             </div>
-            <p className="text-slate-500 text-sm mt-0.5">Papan pemuka pautan portal rasmi dan integrasi capaian sistem sekolah sains muzaffar syah.</p>
+            <p className="text-slate-500 text-sm mt-0.5">Katalog pautan rasmi aplikasi KitaBUDDY bersepadu dengan perlindungan identiti digital.</p>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              setShowRequestsPanel(!showRequestsPanel);
+              setShowAddForm(false);
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold border flex items-center gap-2 shadow-xs transition-all ${
+              showRequestsPanel 
+                ? 'bg-slate-900 text-white border-slate-900' 
+                : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
+            }`}
+          >
+            <Inbox className="h-4 w-4" />
+            {isAdmin ? `Senarai Permohonan (${requests.filter(r => r.status === 'Menunggu Kelulusan').length})` : 'Senarai Permohonan Saya'}
+          </button>
+
           <Button 
-            onClick={() => setShowAddForm(!showAddForm)} 
+            onClick={() => {
+              setShowAddForm(!showAddForm);
+              setShowRequestsPanel(false);
+            }} 
             className="bg-brand-700 hover:bg-brand-850 text-white text-xs font-bold flex items-center gap-1.5 py-2.5 rounded-xl shadow-xs"
             id="toggle-add-app-btn"
           >
             <Plus className="h-4 w-4" />
-            {showAddForm ? 'Kembali' : 'Tambah Aplikasi Baru'}
+            {showAddForm ? 'Kembali' : isAdmin ? 'Tambah Aplikasi Baru' : 'Mohon Tambah Aplikasi'}
           </Button>
         </div>
       </div>
@@ -376,24 +454,28 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
         </div>
       )}
 
-      {/* Dynamic App Adding Form */}
+      {/* Dynamic App Adding / Request Request Form */}
       {showAddForm && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 animate-slide-down space-y-6">
           <div className="border-b border-slate-100 pb-3">
             <h3 className="font-bold text-slate-950 text-base flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-brand-600 animate-pulse" />
-              Daftarkan Pautan Aplikasi / Portal Baru
+              {isAdmin ? 'Daftarkan Pautan Aplikasi Baru (Pentadbir)' : 'Mohon Pendaftaran Aplikasi / Portal Baru'}
             </h3>
-            <p className="text-xs text-slate-500">Isikan butiran di bawah bagi memperbanyakkan direktori capaian laman web untuk kegunaan bersepadu.</p>
+            <p className="text-xs text-slate-500">
+              {isAdmin 
+                ? 'Sebagai pentadbir berdaftar, anda boleh mendaftarkan pautan aplikasi terus ke direktori utama.' 
+                : 'Muat naik cadangan sistem sekolah atau pautan digital. Permohonan akan dihantar kepada rfnsyhmi.principal@gmail.com.'}
+            </p>
           </div>
 
-          <form onSubmit={handleCreateApp} className="grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
+          <form onSubmit={handleSubmitForm} className="grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
             <div className="md:col-span-6 space-y-1.5">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Aplikasi</label>
               <input
                 type="text"
                 required
-                placeholder="cth: Sistem e-Sukan / Portal HEM"
+                placeholder="cth: Sistem Laporan Buli (S.A.F.E)"
                 value={newAppName}
                 onChange={(e) => setNewAppName(e.target.value)}
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-medium"
@@ -405,7 +487,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
               <input
                 type="text"
                 required
-                placeholder="cth: subapp.kitabuddy.dpdns.org atau sukan.com"
+                placeholder="cth: safe.kitabuddy.dpdns.org"
                 value={newAppUrl}
                 onChange={(e) => setNewAppUrl(e.target.value)}
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-medium font-mono"
@@ -430,49 +512,128 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                 onChange={(e) => setNewAppCategory(e.target.value as any)}
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-705 cursor-pointer bg-slate-50"
               >
+                <option value="Pendidikan">Pendidikan</option>
+                <option value="Utiliti">Utiliti</option>
                 <option value="Akademik">Akademik</option>
                 <option value="Hal Ehwal Pelajar">Hal Ehwal Pelajar</option>
                 <option value="Sistem Pentadbiran">Sistem Pentadbiran</option>
-                <option value="Utiliti">Utiliti</option>
               </select>
             </div>
 
-            <div className="md:col-span-4 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Zon Tahap Akses Minimum</label>
-              <select
-                value={newAppAccess}
-                onChange={(e) => setNewAppAccess(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-705 cursor-pointer bg-slate-50"
-              >
-                <option value="Semua">Semua Pengguna (Awam)</option>
-                <option value="Kakitangan">Kakitangan Sekolah & Guru</option>
-                <option value="Pentadbir">Pentadbir Portal & CISO</option>
-              </select>
-            </div>
+            {isAdmin && (
+              <>
+                <div className="md:col-span-4 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Zon Tahap Akses Minimum</label>
+                  <select
+                    value={newAppAccess}
+                    onChange={(e) => setNewAppAccess(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-705 cursor-pointer bg-slate-50"
+                  >
+                    <option value="Semua">Semua Pengguna (Awam)</option>
+                    <option value="Kakitangan">Kakitangan Sekolah & Guru</option>
+                    <option value="Pentadbir">Pentadbir Portal & CISO</option>
+                  </select>
+                </div>
 
-            <div className="md:col-span-4 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Ikon Standard Card</label>
-              <select
-                value={newAppIcon}
-                onChange={(e) => setNewAppIcon(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-705 cursor-pointer bg-slate-50"
-              >
-                <option value="BookOpen">Buku (Akademik)</option>
-                <option value="Award">Anugerah (Disiplin/Sukan)</option>
-                <option value="Clock">Jam (Kehadiran/Masa)</option>
-                <option value="FileText">Fail (Ujian/Keputusan)</option>
-                <option value="Key">Kunci (Keselamatan/Log)</option>
-                <option value="Globe">Dunia (Pautan Umum)</option>
-              </select>
-            </div>
+                <div className="md:col-span-4 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Ikon Standard Card</label>
+                  <select
+                    value={newAppIcon}
+                    onChange={(e) => setNewAppIcon(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-705 cursor-pointer bg-slate-50"
+                  >
+                    <option value="BookOpen">Buku (Pendidikan/Akademik)</option>
+                    <option value="Key">Kunci (Keselamatan/Log)</option>
+                    <option value="Award">Anugerah (Disiplin/Sukan)</option>
+                    <option value="Clock">Jam (Kehadiran/Masa)</option>
+                    <option value="FileText">Fail (Ujian/Keputusan)</option>
+                    <option value="Globe">Dunia (Pautan Umum)</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <div className="md:col-span-12 flex justify-end gap-2 pt-3">
               <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>Batal</Button>
               <Button type="submit" className="bg-brand-900 border-none px-6 text-white text-xs font-bold">
-                Tambah ke Portal
+                {isAdmin ? 'Tambah Terus' : 'Hantar Permohonan Kelulusan'}
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Requests Management / Status Sub-panel */}
+      {showRequestsPanel && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6 animate-fade-in">
+          <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Inbox className="h-5 w-5 text-brand-650" />
+                {isAdmin ? 'Pengurusan Permohonan Integrasi Aplikasi' : 'Status Permohonan Cadangan Anda'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {isAdmin 
+                  ? 'Kakitangan dan murid sedia menghantar permohonan pautan internet luaran atau dalaman bagi penambahan pustaka digital.' 
+                  : 'Semak fasa kelulusan pendaftaran sistem yang telah anda mohon sebelum masuk ke direktori utama.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Request List */}
+          {requests.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs italic">
+              Tiada permohonan direkodkan pada masa ini.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {requests
+                .filter(r => isAdmin ? true : r.requesterEmail.toLowerCase() === user.email.toLowerCase())
+                .map((req) => (
+                  <div key={req.id} className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900 text-sm">{req.name}</span>
+                        <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold">
+                          {req.category}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          req.status === 'Menunggu Kelulusan' ? 'bg-amber-100 text-amber-800' :
+                          req.status === 'Diluluskan' ? 'bg-emerald-105 bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 font-mono text-[11px] truncate max-w-md">{req.url}</p>
+                      <p className="text-slate-600 italic">"{req.description}"</p>
+                      <div className="text-[10px] text-slate-400">
+                        Dipohon oleh: <span className="font-bold">{req.requesterEmail}</span> pada {req.timestamp}
+                      </div>
+                    </div>
+
+                    {/* Admin Actions */}
+                    {isAdmin && req.status === 'Menunggu Kelulusan' && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApproveRequest(req)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg flex items-center gap-1"
+                        >
+                          <ThumbsUp className="h-3 w-3" />
+                          Luluskan
+                        </button>
+                        <button
+                          onClick={() => handleRejectRequest(req.id)}
+                          className="bg-red-550 hover:bg-red-650 text-white font-bold py-1.5 px-3 rounded-lg flex items-center gap-1"
+                        >
+                          <ThumbsDown className="h-3 w-3" />
+                          Tolak
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -487,17 +648,17 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
             </div>
             <div>
               <p className="font-bold text-slate-900 text-[13px] leading-tight flex items-center gap-1.5">
-                Pemantauan Hak Capaian: {user.name}
+                Pengguna Sesi: {user.name} {isAdmin && <span className="bg-red-100 text-red-800 text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase ml-1">PENTADBIR</span>}
               </p>
               <p className="text-slate-500 text-xs mt-0.5">
-                Peranan: <span className="font-semibold text-slate-700">{user.role || 'Kakitangan'}</span> | Emel: <span className="font-semibold text-slate-700">{user.email}</span>
+                Emel: <span className="font-semibold text-slate-700">{user.email}</span> | Peranan: <span className="font-semibold text-slate-700">{isAdmin ? 'Admin Portal Utama' : 'Pelajar / Awam'}</span>
               </p>
             </div>
           </div>
           
           <div className="flex items-center space-x-2 text-xs font-medium text-emerald-800 bg-white border border-emerald-150 px-3.5 py-1.5 rounded-full shadow-xs">
             <ShieldCheck className="h-4 w-4 text-emerald-600 animate-pulse" />
-            <span>Kebenaran IAM Clerk Bersepadu</span>
+            <span>Kebenaran IAM Zero-Trust Disahkan</span>
           </div>
         </div>
 
@@ -509,7 +670,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-brand-600 transition-colors" />
             <input
               type="text"
-              placeholder="Cari aplikasi, kod sistem, atau deskripsi..."
+              placeholder="Cari aplikasi atau pautan..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-500 text-sm font-medium transition-all"
@@ -520,7 +681,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1.5 md:pb-0">
             <div className="flex items-center text-xs text-slate-400 font-bold uppercase gap-1 shrink-0 mr-1">
               <Filter className="h-3 w-3" />
-              <span>Kategori:</span>
+              <span>Saring:</span>
             </div>
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat;
@@ -571,10 +732,11 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                       {/* Top Badges and Actions */}
                       <div className="flex items-center justify-between">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
-                          app.category === 'Akademik' ? 'bg-violet-50 text-violet-750' :
+                          app.category === 'Pendidikan' ? 'bg-violet-50 text-violet-750' :
+                          app.category === 'Utiliti' ? 'bg-emerald-50 text-emerald-750' :
+                          app.category === 'Akademik' ? 'bg-sky-50 text-sky-750' :
                           app.category === 'Hal Ehwal Pelajar' ? 'bg-amber-50 text-amber-750' :
-                          app.category === 'Sistem Pentadbiran' ? 'bg-indigo-50 text-indigo-750' :
-                          'bg-emerald-50 text-emerald-750'
+                          'bg-indigo-50 text-indigo-750'
                         }`}>
                           {app.category}
                         </span>
@@ -590,14 +752,16 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                             {app.accessLevel === 'Semua' ? 'Akses Terbuka' : `${app.accessLevel} Sahaja`}
                           </span>
 
-                          {/* Delete Action Button for management */}
-                          <button
-                            onClick={(e) => handleDeleteApp(app.id, e)}
-                            className="p-1 hover:bg-red-50 text-slate-350 hover:text-red-600 rounded-lg transition-colors ml-1.5"
-                            title="Padam Aplikasi Portal"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {/* Delete Action Button for Admin only */}
+                          {isAdmin && (
+                            <button
+                              onClick={(e) => handleDeleteApp(app.id, e)}
+                              className="p-1 hover:bg-red-50 text-slate-350 hover:text-red-600 rounded-lg transition-colors ml-1.5"
+                              title="Padam Aplikasi"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -616,7 +780,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                             {app.name}
                             {!hasAccess && <Lock className="h-4 w-4 text-red-500 shrink-0" />}
                           </h3>
-                          <p className="text-slate-450 text-xs font-medium font-mono' truncate max-w-[280px]" title={app.url}>
+                          <p className="text-slate-450 text-[11px] font-medium font-mono truncate max-w-[280px]" title={app.url}>
                             {app.url}
                           </p>
                         </div>
@@ -632,15 +796,21 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                     <div className="border-t border-slate-100 p-4 bg-slate-50/30 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         
-                        {/* Whitelist Settings Trigger */}
-                        <button
-                          type="button"
-                          onClick={() => setExpandedAppId(isExpanded ? null : app.id)}
-                          className="text-xs font-bold text-brand-750 hover:underline flex items-center gap-1 text-left"
-                        >
-                          <Mail className="h-3.5 w-3.5 text-brand-600" />
-                          {hasEmails ? `${app.allowedEmails?.length} Pelepasan` : 'Konfigurasi Hak Khusus'}
-                        </button>
+                        {/* Whitelist Settings Trigger (Disabled/hidden for non-administrators or customized) */}
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedAppId(isExpanded ? null : app.id)}
+                            className="text-xs font-bold text-brand-750 hover:underline flex items-center gap-1 text-left"
+                          >
+                            <Mail className="h-3.5 w-3.5 text-brand-600" />
+                            {hasEmails ? `${app.allowedEmails?.length} Pelepasan` : 'Konfigurasi Hak Khusus'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-mono uppercase">
+                            IP: Disulitkan dengan SAML
+                          </span>
+                        )}
 
                         {/* Status tag */}
                         <span className={`text-[10px] font-bold px-2 py-0.2 rounded-md ${
@@ -675,8 +845,8 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                         </div>
                       )}
 
-                      {/* Whitelist Panel */}
-                      {isExpanded && (
+                      {/* Whitelist Panel (Only shown to Administrator) */}
+                      {isAdmin && isExpanded && (
                         <div className="border-t border-slate-200 pt-3 mt-1 space-y-3 animate-fade-in text-xs">
                           <div className="bg-white p-3 rounded-lg border border-slate-150 space-y-2">
                             <span className="font-bold text-slate-700 block">Pelepasan E-mel Tersuai (Whitelist)</span>

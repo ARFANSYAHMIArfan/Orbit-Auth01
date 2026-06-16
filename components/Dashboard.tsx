@@ -215,257 +215,6 @@ const SettingsView: React.FC<{ onBack: () => void; user: User }> = ({ onBack, us
       )}
 
       <div className="grid gap-6 bg-slate-50/20">
-        {/* Pilihan Pangkalan Data (Supabase / Firebase) */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Database className="h-5 w-5 text-brand-600" />
-              <div>
-                <h3 className="font-semibold text-slate-900">Penyepaduan Pangkalan Data (Supabase & Firebase)</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Pilih dan konfigurasikan sambungan pangkalan data awan pilihan anda.</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Penyedia Pangkalan Data Aktif</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setDbProvider('firebase')}
-                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                    dbProvider === 'firebase'
-                      ? 'border-brand-500 ring-2 ring-brand-100 bg-brand-50/30'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="font-bold text-sm text-slate-950">Firebase Firestore</span>
-                  <span className="text-xs text-slate-500 mt-1">Menggunakan pangkalan data serverless terurus keselamatan tinggi yang sedia ada.</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDbProvider('supabase')}
-                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                    dbProvider === 'supabase'
-                      ? 'border-brand-500 ring-2 ring-brand-100 bg-brand-50/30'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="font-bold text-sm text-slate-950">Supabase (PostgreSQL)</span>
-                  <span className="text-xs text-slate-500 mt-1">Sambung ke pangkalan data PostgreSQL berprestasi tinggi milik peribadi anda.</span>
-                </button>
-              </div>
-            </div>
-
-            {dbProvider === 'supabase' && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 animate-slide-up">
-                <h4 className="font-bold text-slate-850 text-xs uppercase tracking-wider">Konfigurasi Sambungan Supabase</h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <Input 
-                    label="Supabase URL (API Endpoint)" 
-                    placeholder="https://your-project.supabase.co"
-                    value={supabaseUrl} 
-                    onChange={(e) => setSupabaseUrl(e.target.value)} 
-                    disabled={isSaving}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input 
-                      label="Supabase API Anon Key (Client Key)" 
-                      placeholder="eyJhbGciOiJIUzI1NiIsInR5..."
-                      value={supabaseAnonKey} 
-                      onChange={(e) => setSupabaseAnonKey(e.target.value)} 
-                      disabled={isSaving}
-                      type="password"
-                    />
-                    <Input 
-                      label="Supabase Service Role Key (Bypass RLS)" 
-                      placeholder="eyJhbGciOiJIUzI1NiIsInR5..."
-                      value={supabaseServiceRoleKey} 
-                      onChange={(e) => setSupabaseServiceRoleKey(e.target.value)} 
-                      disabled={isSaving}
-                      type="password"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 py-1 border-t border-slate-250/20 pt-3">
-                  <input 
-                    type="checkbox" 
-                    id="use_service_key" 
-                    checked={useServiceKey} 
-                    onChange={(e) => setUseServiceKey(e.target.checked)} 
-                    disabled={isSaving}
-                    className="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 border-slate-300 cursor-pointer"
-                  />
-                  <label htmlFor="use_service_key" className="text-xs font-semibold text-slate-705 cursor-pointer selection:bg-transparent">
-                    Pintasi Polisi RLS (Bypass Row-Level Security) menggunakan Service Role Key (Disyorkan jika polisi RLS belum dikonfigurasikan)
-                  </label>
-                </div>
-
-                <div className="bg-slate-100/70 p-4 rounded-lg border border-slate-200 text-xs font-sans space-y-2 text-slate-700 mt-4 leading-relaxed">
-                  <p className="font-bold text-slate-900">💡 Panduan Persediaan SQL Supabase:</p>
-                  <p>Sila tampal dan laksanakan kod SQL ini di dalam <strong>SQL Editor</strong> di papan pemuka Supabase anda untuk membina jadual <code>users</code> serta menetapkan kebenaran keselamatan:</p>
-                  <pre className="p-3 bg-slate-900 text-slate-200 rounded-md font-mono text-[11px] overflow-x-auto select-all cursor-pointer leading-normal" title="Klik untuk pilih semua/Salin" onClick={(e) => {
-                    const range = document.createRange();
-                    range.selectNode(e.currentTarget);
-                    window.getSelection()?.removeAllRanges();
-                    window.getSelection()?.addRange(range);
-                  }}>
-{`-- 1. Bina jadual users jika belum wujud
-create table if not exists public.users (
-  id text primary key,
-  name text not null,
-  email text unique not null,
-  password text,
-  role text,
-  department text,
-  "lastActive" text,
-  "ipAddress" text,
-  status text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 2. PILIHAN A (Sangat Disyorkan): Lumpuhkan RLS demi memudahkan pembangunan setempat
-alter table public.users disable row level security;
-
--- 3. PILIHAN B (Alternatif): Jika anda mahu mengekalkan RLS aktif, benarkan akses umum untuk table ini
--- alter table public.users enable row level security;
--- drop policy if exists "Allow public access" on public.users;
--- create policy "Allow public access" on public.users for all using (true) with check (true);`}
-                  </pre>
-                  <p className="text-[10px] text-slate-500 italic mt-1">Tip: Menjalankan "disable row level security" (Pilihan A) adalah cara terpantas untuk membina pangkalan data tanpa sebarang ralat polisi RLS.</p>
-                </div>
-
-                <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-200/60 mt-4 gap-4">
-                  <div className="text-xs flex items-center gap-2">
-                    {connectionStatus === 'testing' && (
-                      <span className="text-slate-500 flex items-center gap-1.5 font-medium">
-                        <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-                        Menguji sambungan pangkalan data...
-                      </span>
-                    )}
-                    {connectionStatus === 'success' && (
-                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-150">
-                        {connectionMessage}
-                      </span>
-                    )}
-                    {connectionStatus === 'failed' && (
-                      <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-150">
-                        {connectionMessage}
-                      </span>
-                    )}
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleTestConnection}
-                    disabled={connectionStatus === 'testing'}
-                    className="h-8.5 text-xs font-semibold"
-                  >
-                    Uji Sambungan Supabase
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Pilihan Penyepaduan MongoDB Log Sistem */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Database className="h-5 w-5 text-emerald-600" />
-              <div>
-                <h3 className="font-semibold text-slate-900">Penyepaduan MongoDB Log Sistem</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Selaraskan setiap transaksi keselamatan IAM dan navigasi ke pangkalan data dokumen MongoDB secara masa nyata.</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-bold text-sm text-slate-950 block">Status Pengaktifan Log</span>
-                <span className="text-xs text-slate-500">Apabila diaktifkan, setiap pendaftaran, kemas kini, pertanyaan, dan tindakan data explorer akan dialirkan ke MongoDB Cluster anda.</span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={mongoEnabled}
-                  onChange={(e) => setMongoEnabled(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
-            </div>
-
-            {mongoEnabled && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 animate-slide-up">
-                <h4 className="font-bold text-slate-850 text-xs uppercase tracking-wider">Konfigurasi Sambungan MongoDB Atlas (Klien Terjamin)</h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <Input 
-                    label="MongoDB Connection URI" 
-                    placeholder="mongodb+srv://username:password@cluster.mongodb.net/database"
-                    value={mongoUri} 
-                    onChange={(e) => setMongoUri(e.target.value)} 
-                    disabled={isSaving}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input 
-                      label="Nama Database (Database Name)" 
-                      placeholder="kitabuddy_zero_trust"
-                      value={mongoDbName} 
-                      onChange={(e) => setMongoDbName(e.target.value)} 
-                      disabled={isSaving}
-                    />
-                    <Input 
-                      label="Nama Koleksi (Collection Name)" 
-                      placeholder="system_audit_logs"
-                      value={mongoCollection} 
-                      onChange={(e) => setMongoCollection(e.target.value)} 
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-150/40 mt-4 gap-4">
-                  <div className="text-xs flex items-center gap-2">
-                    {mongoTestStatus === 'testing' && (
-                      <span className="text-slate-500 flex items-center gap-1.5 font-medium">
-                        <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-                        Menguji sambungan kluster MongoDB...
-                      </span>
-                    )}
-                    {mongoTestStatus === 'success' && (
-                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-150">
-                        {mongoTestMessage}
-                      </span>
-                    )}
-                    {mongoTestStatus === 'failed' && (
-                      <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-150">
-                        {mongoTestMessage}
-                      </span>
-                    )}
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleTestMongo}
-                    disabled={mongoTestStatus === 'testing'}
-                    className="h-8.5 text-xs font-semibold"
-                  >
-                    Uji Sambungan MongoDB
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-3">
             <UserIcon className="h-5 w-5 text-brand-600" />
@@ -533,6 +282,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [currentView, setCurrentView] = useState<'home' | 'settings' | 'explorer' | 'status' | 'logs' | 'apps'>('home');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
+  const adminEmails = ['rfnsyhmi.principal@gmail.com', 'rizqynhakimi07@gmail.com'];
+  const isSpecialAdmin = adminEmails.includes((user.email || '').toLowerCase());
+
   const items = [
     { 
       title: 'Check Status', 
@@ -543,21 +295,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       icon: Activity
     },
     { 
+      title: 'Projek', 
+      desc: 'Urus tugas pembangunan aktif anda.', 
+      color: 'bg-indigo-50 text-indigo-700',
+      href: null,
+      onClick: () => setIsConnectModalOpen(true),
+      icon: Folder
+    },
+    { 
       title: 'Capaian Aplikasi', 
       desc: 'Paparkan dan urus direktori portal aplikasi capaian bagi semua kakitangan dan pelajar.', 
-      color: 'bg-indigo-50 text-indigo-700',
+      color: 'bg-indigo-50 text-indigo-750 border border-indigo-100',
       href: null,
       onClick: () => setCurrentView('apps'),
       icon: Globe
     },
-    { 
-      title: 'Data Explorer', 
-      desc: 'Query dan urus data pengguna anda secara visual.', 
-      color: 'bg-emerald-50 text-emerald-700',
-      href: null,
-      onClick: () => setCurrentView('explorer'),
-      icon: Database
-    },
+    ...(isSpecialAdmin ? [
+      { 
+        title: 'Data Explorer', 
+        desc: 'Query dan urus data pengguna anda secara visual.', 
+        color: 'bg-emerald-50 text-emerald-700',
+        href: null,
+        onClick: () => setCurrentView('explorer'),
+        icon: Database
+      },
+      { 
+        title: 'Log Audit MongoDB', 
+        desc: 'Pemantauan BSON audit logs keselamatan sistem.', 
+        color: 'bg-emerald-50 text-emerald-900 border border-emerald-100',
+        href: null,
+        onClick: () => setCurrentView('logs'),
+        icon: Terminal
+      }
+    ] : []),
     { 
       title: 'Tetapan', 
       desc: 'Konfigurasikan pilihan ruang kerja anda.', 
@@ -565,15 +335,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       href: null,
       onClick: () => setCurrentView('settings'),
       icon: Settings
-    },
-    { 
-      title: 'Log Audit MongoDB', 
-      desc: 'Pemantauan BSON audit logs keselamatan sistem.', 
-      color: 'bg-emerald-50 text-emerald-900 border border-emerald-100',
-      href: null,
-      onClick: () => setCurrentView('logs'),
-      icon: Terminal
-    },
+    }
   ];
 
   return (
@@ -659,12 +421,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <SettingsView onBack={() => setCurrentView('home')} user={user} />
         ) : currentView === 'status' ? (
           <StatusView onBack={() => setCurrentView('home')} />
-        ) : currentView === 'logs' ? (
+        ) : currentView === 'logs' && isSpecialAdmin ? (
           <MongoLogsView onBack={() => setCurrentView('home')} userEmail={user.email} />
         ) : currentView === 'apps' ? (
           <AppDirectory onBack={() => setCurrentView('home')} user={user} />
-        ) : (
+        ) : currentView === 'explorer' && isSpecialAdmin ? (
           <DataExplorer onBack={() => setCurrentView('home')} />
+        ) : (
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm max-w-lg mx-auto space-y-4 animate-fade-in my-12">
+            <span className="text-4xl">⚠️</span>
+            <h3 className="font-bold text-slate-950 text-lg">Akses Dihadkan</h3>
+            <p className="text-slate-500 text-sm">Halaman ini hanya dibenarkan untuk diakses oleh Pentadbir Khas Sahaja.</p>
+            <Button onClick={() => setCurrentView('home')} className="bg-brand-900 border-none px-6 text-white text-xs font-bold py-2.5 rounded-xl">Kembali ke Laman Utama</Button>
+          </div>
         )}
       </main>
 
