@@ -88,7 +88,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
   const [launchProgress, setLaunchProgress] = useState(0);
 
   const adminEmail = 'rfnsyhmi.principal@gmail.com';
-  const isAdmin = user.email.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin = user.email.toLowerCase() === adminEmail.toLowerCase() || user.role === 'Admin';
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -284,18 +284,32 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
       return true;
     }
 
-    const role = user.role || 'Pelajar';
+    const role = user.role || 'Guru/Murid';
 
     if (app.accessLevel === 'Semua') {
       return true;
     }
 
     if (app.accessLevel === 'Kakitangan') {
-      return role === 'Kakitangan' || role === 'Pentadbir' || role === 'CISO' || role === 'Developer';
+      return (
+        role === 'Kakitangan' || 
+        role === 'Pentadbir' || 
+        role === 'CISO' || 
+        role === 'Developer' || 
+        role === 'Admin' || 
+        role === 'Guru/Murid' || 
+        role === 'Guru'
+      );
     }
 
     if (app.accessLevel === 'Pentadbir') {
-      return role === 'Pentadbir' || role === 'CISO' || role === 'Developer' || isAdmin;
+      return (
+        role === 'Pentadbir' || 
+        role === 'CISO' || 
+        role === 'Developer' || 
+        role === 'Admin' || 
+        isAdmin
+      );
     }
 
     return false;
@@ -651,7 +665,7 @@ export const AppDirectory: React.FC<AppDirectoryProps> = ({ onBack, user }) => {
                 Pengguna Sesi: {user.name} {isAdmin && <span className="bg-red-100 text-red-800 text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase ml-1">PENTADBIR</span>}
               </p>
               <p className="text-slate-500 text-xs mt-0.5">
-                Emel: <span className="font-semibold text-slate-700">{user.email}</span> | Peranan: <span className="font-semibold text-slate-700">{isAdmin ? 'Admin Portal Utama' : 'Pelajar / Awam'}</span>
+                Emel: <span className="font-semibold text-slate-700">{user.email}</span> | Peranan: <span className="font-semibold text-slate-700">{user.role || (isAdmin ? 'Admin Portal Utama' : 'Pelajar / Awam')}</span>
               </p>
             </div>
           </div>

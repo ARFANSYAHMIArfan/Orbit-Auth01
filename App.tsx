@@ -42,6 +42,32 @@ const ClerkAppContent: React.FC = () => {
         const name = clerkUser.fullName || clerkUser.firstName || clerkUser.username || email.split('@')[0];
         const clerkId = clerkUser.id;
 
+        // Ambil peranan dari metadata Clerk (publicMetadata, unsafeMetadata, atau organizationMemberships)
+        const rawClerkRole = (
+          (clerkUser.publicMetadata?.role as string) || 
+          (clerkUser.unsafeMetadata?.role as string) || 
+          (clerkUser.organizationMemberships?.[0]?.role as string) || 
+          ''
+        ).toLowerCase();
+
+        // Tally role dengan sistem:
+        // kalau admin --> Admin
+        // kalau member --> Guru/Murid
+        let mappedRole = 'Guru/Murid';
+        if (rawClerkRole.includes('admin')) {
+          mappedRole = 'Admin';
+        } else if (rawClerkRole.includes('member')) {
+          mappedRole = 'Guru/Murid';
+        } else {
+          // Sokongan tambahan jika e-mel tersenarai sebagai pentadbir khas
+          const adminEmails = ['rfnsyhmi.principal@gmail.com', 'rizqynhakimi07@gmail.com'];
+          if (adminEmails.includes(email.toLowerCase())) {
+            mappedRole = 'Admin';
+          } else {
+            mappedRole = 'Guru/Murid';
+          }
+        }
+
         try {
           // Cari profil pengguna yang selaras dalam sistem pangkalan data awan
           let existingUser = await dbService.findUser(email);
@@ -49,7 +75,7 @@ const ClerkAppContent: React.FC = () => {
             existingUser = await dbService.updateUser(clerkId, {
               name,
               email,
-              role: 'Kakitangan',
+              role: mappedRole,
               department: 'Sistem Kawalan Clerk',
               status: 'Aktif',
               lastActive: 'Masa Nyata',
@@ -58,14 +84,15 @@ const ClerkAppContent: React.FC = () => {
             await logService.addLog(
               'DAFTAR_PENGGUNA',
               email,
-              `Pengguna baharu '${name}' didaftarkan secara automatik melalui Clerk SSO.`,
+              `Pengguna baharu '${name}' didaftarkan secara automatik melalui Clerk SSO dengan peranan ${mappedRole}.`,
               'Berjaya'
             );
           } else {
-            // Selaraskan maklumat terkini Clerk ke pangkalan data
+            // Selaraskan maklumat terkini Clerk ke pangkalan data termasuk peranan baru
             existingUser = await dbService.updateUser(existingUser.id, {
               name,
               email,
+              role: mappedRole,
               lastActive: 'Masa Nyata'
             });
           }
@@ -77,7 +104,7 @@ const ClerkAppContent: React.FC = () => {
             id: clerkId,
             name,
             email,
-            role: 'Kakitangan',
+            role: mappedRole,
             department: 'Sistem Kawalan Clerk',
             status: 'Aktif',
             lastActive: 'Masa Nyata',
@@ -197,10 +224,12 @@ const SandboxAppContent: React.FC = () => {
   const handleLogin = async (name: string, email: string) => {
     let existingUser = await dbService.findUser(email);
     if (!existingUser) {
+      const adminEmails = ['rfnsyhmi.principal@gmail.com', 'rizqynhakimi07@gmail.com'];
+      const mappedRole = adminEmails.includes(email.trim().toLowerCase()) ? 'Admin' : 'Guru/Murid';
       existingUser = await dbService.updateUser(Math.random().toString(36).substr(2, 9), {
         name,
         email,
-        role: 'Kakitangan',
+        role: mappedRole,
         department: 'Simulated Sandbox',
         status: 'Aktif',
         lastActive: 'Sesaat yang lalu'

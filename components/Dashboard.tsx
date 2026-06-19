@@ -283,7 +283,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   const adminEmails = ['rfnsyhmi.principal@gmail.com', 'rizqynhakimi07@gmail.com'];
-  const isSpecialAdmin = adminEmails.includes((user.email || '').toLowerCase());
+  const isSpecialAdmin = adminEmails.includes((user.email || '').toLowerCase()) || user.role === 'Admin';
 
   const items = [
     { 
